@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import FloatingCard from '../3D/FloatingCard';
 import ParallaxSection from '../3D/ParallaxSection';
-import PaintEraser from './PaintEraser';
+import TypewriterReveal from './TypewriterReveal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle, AlertCircle, Palette } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Terminal } from 'lucide-react';
 import { ContactFormData } from '../../types';
 import { sendEmail } from '../../services/emailService';
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
@@ -17,7 +17,6 @@ const Contact: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [revealPercentage, setRevealPercentage] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +31,7 @@ const Contact: React.FC = () => {
       } else {
         setSubmitStatus('error');
       }
-    } catch {
+    } catch (error) {
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -44,10 +43,6 @@ const Contact: React.FC = () => {
       ...prev,
       [e.target.name]: e.target.value,
     }));
-  };
-
-  const handleReveal = (percentage: number) => {
-    setRevealPercentage(percentage);
   };
 
   return (
@@ -64,13 +59,13 @@ const Contact: React.FC = () => {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="inline-flex items-center gap-3 mb-6"
           >
-            <Palette className="w-8 h-8 text-primary-600 dark:text-primary-400" />
+            <Terminal className="w-8 h-8 text-primary-600 dark:text-primary-400" />
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-              Let's Create Together
+              Initialize Contact
             </h2>
           </motion.div>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Uncover the contact form by moving your cursor over the painted surface below
+            Hover over the terminal below to activate the secure contact protocol
           </p>
         </div>
 
@@ -78,19 +73,15 @@ const Contact: React.FC = () => {
           <FloatingCard 
             className={`transition-all duration-700 delay-200 ${isIntersecting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
             delay={0.2}
-            intensity={1.1}
+            intensity={0}
           >
-            <PaintEraser 
-              onReveal={handleReveal}
+            <TypewriterReveal 
               className="min-h-[600px] rounded-2xl overflow-hidden"
             >
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-xl min-h-[600px]">
                 <motion.form 
                   onSubmit={handleSubmit} 
                   className="space-y-6 h-full flex flex-col justify-center"
-                  initial={{ opacity: 0.3 }}
-                  animate={{ opacity: revealPercentage > 20 ? 1 : 0.3 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -113,10 +104,8 @@ const Contact: React.FC = () => {
                         value={formData.name}
                         onChange={handleChange}
                         required
-                        disabled={revealPercentage < 30}
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="Your name"
-                        whileFocus={{ scale: 1.02 }}
                       />
                     </div>
                     
@@ -131,10 +120,8 @@ const Contact: React.FC = () => {
                         value={formData.email}
                         onChange={handleChange}
                         required
-                        disabled={revealPercentage < 30}
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         placeholder="your.email@example.com"
-                        whileFocus={{ scale: 1.02 }}
                       />
                     </div>
                   </div>
@@ -149,19 +136,17 @@ const Contact: React.FC = () => {
                       value={formData.message}
                       onChange={handleChange}
                       required
-                      disabled={revealPercentage < 30}
                       rows={5}
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="Tell me about your project..."
-                      whileFocus={{ scale: 1.02 }}
                     />
                   </div>
 
                   <motion.button
                     type="submit"
-                    disabled={isSubmitting || revealPercentage < 50}
-                    whileHover={{ scale: revealPercentage >= 50 ? 1.05 : 1 }}
-                    whileTap={{ scale: revealPercentage >= 50 ? 0.95 : 1 }}
+                    disabled={isSubmitting}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
                     {isSubmitting ? (
@@ -204,7 +189,7 @@ const Contact: React.FC = () => {
                   </AnimatePresence>
                 </motion.form>
               </div>
-            </PaintEraser>
+            </TypewriterReveal>
           </FloatingCard>
 
           <div className={`text-center mt-12 transition-all duration-700 delay-400 ${isIntersecting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -215,16 +200,16 @@ const Contact: React.FC = () => {
               className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto border border-white/20 dark:border-gray-700/50"
             >
               <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">
-                💡 <strong>Interactive Contact:</strong> Move your cursor (or finger on mobile) over the painted area to reveal the contact form!
+                💡 <strong>Interactive Contact:</strong> Hover over the terminal interface to activate the contact form!
               </p>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Prefer to email directly?
               </p>
               <a 
-                href="mailto:ramprakash777.sah@gmail.com"
+                href="mailto:btwitsramprakash@gmail.com"
                 className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-semibold transition-colors"
               >
-                contact@ramprakashsah
+                btwitsramprakash@gmail.com
               </a>
             </motion.div>
           </div>

@@ -5,8 +5,9 @@ export const projects: Project[] = [
     id: '1',
     title: "Alzheimer's Disease Detection from MRI",
     description: "AI-powered medical diagnosis system using CNN with TensorFlow for early detection of Alzheimer's disease from brain MRI scans.",
-    image: "https://images.pexels.com/photos/7089/people-coffee-tea-meeting.jpg?auto=compress&cs=tinysrgb&w=600",
+    image: "https://images.pexels.com/photos/40568/medical-appointment-doctor-healthcare-40568.jpeg?auto=compress&cs=tinysrgb&w=600",
     technologies: ['Python', 'TensorFlow', 'CNN', 'OpenCV'],
+    link: 'https://github.com/i-am-ramprakash/Alzheimer-s-Disease-Detection-from-MRI',
   },
   {
     id: '2',
@@ -14,6 +15,7 @@ export const projects: Project[] = [
     description: "Decentralized cloud storage solution with blockchain technology, AES encryption, and SHA-512 integrity verification.",
     image: "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&cs=tinysrgb&w=600",
     technologies: ['Blockchain', 'AES', 'SHA-512', 'Node.js'],
+    link: 'https://github.com/i-am-ramprakash/Enhancing-Security-of-Data-in-Cloud-Storage-using-Decentralized-Block-chain',
   },
   {
     id: '3',
@@ -21,6 +23,7 @@ export const projects: Project[] = [
     description: "Full-stack enterprise web application built during Wipro internship with Spring Boot, Hibernate, and RESTful services.",
     image: "https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg?auto=compress&cs=tinysrgb&w=600",
     technologies: ['Java', 'Spring Boot', 'Hibernate', 'REST API'],
+    link: 'https://github.com/i-am-ramprakash/Airline-Booking-System',
   },
 ];
 
@@ -30,7 +33,7 @@ export const experiences: Experience[] = [
     title: 'Assistant System Engineer',
     company: 'Tata Consultancy Services (TCS)',
     location: 'Mumbai, India',
-    period: '',
+    period: 'Mar 2023 – Dec 2024',
     responsibilities: [
       'Feature enhancement for banking software systems',
       'Business requirements analysis and solution design',
@@ -43,7 +46,7 @@ export const experiences: Experience[] = [
     title: 'Full-Stack Developer',
     company: 'Mentor Friends Pvt. Ltd.',
     location: 'Kathmandu, Nepal',
-    period: '',
+    period: 'Mar 2025 – Present',
     responsibilities: [
       'Developed multi-vendor marketplace using FreeSchema',
       'Built dynamic UI components and dashboards',

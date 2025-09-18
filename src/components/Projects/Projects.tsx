@@ -2,12 +2,27 @@ import React from 'react';
 import FloatingCard from '../3D/FloatingCard';
 import ParallaxSection from '../3D/ParallaxSection';
 import { motion } from 'framer-motion';
-import { ExternalLink, Github } from 'lucide-react';
+import { Github, Share2, MessageCircle, Twitter, Linkedin, Facebook } from 'lucide-react';
 import { projects } from '../../data/portfolio';
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
+import type { Project } from '../../types'; // Adjust the import path if needed
 
 const Projects: React.FC = () => {
   const { ref, isIntersecting } = useIntersectionObserver({ threshold: 0.2 });
+
+  const shareProject = (project: Project, platform: string) => {
+    const url = encodeURIComponent(window.location.origin);
+    const text = encodeURIComponent(`Check out this amazing project: ${project.title} by Ramprakash Sah`);
+    
+    const shareUrls = {
+      whatsapp: `https://wa.me/?text=${text}%20${url}`,
+      twitter: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+    };
+    
+    window.open(shareUrls[platform as keyof typeof shareUrls], '_blank');
+  };
 
   return (
     <ParallaxSection
@@ -41,24 +56,6 @@ const Projects: React.FC = () => {
                   transition={{ duration: 0.3 }}
                   className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-4 left-4 right-4 flex gap-2">
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
-                    >
-                      <Github className="w-5 h-5" />
-                    </motion.button>
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                    </motion.button>
-                  </div>
-                </div>
               </div>
               
               <div className="p-6">
@@ -86,22 +83,73 @@ const Projects: React.FC = () => {
                 </div>
                 
                 <div className="flex gap-3">
-                  <motion.button 
+                  <motion.a
+                    href={project.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2"
                   >
                     <Github className="w-4 h-4" />
-                    Code
-                  </motion.button>
-                  <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex-1 border border-primary-600 text-primary-600 dark:text-primary-400 hover:bg-primary-600 hover:text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Live Demo
-                  </motion.button>
+                    View Code
+                  </motion.a>
+                  
+                  <div className="relative group/share">
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex-1 border border-primary-600 text-primary-600 dark:text-primary-400 hover:bg-primary-600 hover:text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </motion.button>
+                    
+                    {/* Share dropdown */}
+                    <div className="absolute bottom-full left-0 right-0 mb-2 opacity-0 group-hover/share:opacity-100 transition-all duration-300 transform translate-y-2 group-hover/share:translate-y-0 pointer-events-none group-hover/share:pointer-events-auto">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 flex gap-2">
+                        <motion.button
+                          onClick={() => shareProject(project, 'whatsapp')}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-lg bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                          title="Share on WhatsApp"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </motion.button>
+                        
+                        <motion.button
+                          onClick={() => shareProject(project, 'twitter')}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                          title="Share on Twitter"
+                        >
+                          <Twitter className="w-4 h-4" />
+                        </motion.button>
+                        
+                        <motion.button
+                          onClick={() => shareProject(project, 'linkedin')}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                          title="Share on LinkedIn"
+                        >
+                          <Linkedin className="w-4 h-4" />
+                        </motion.button>
+                        
+                        <motion.button
+                          onClick={() => shareProject(project, 'facebook')}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                          title="Share on Facebook"
+                        >
+                          <Facebook className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </FloatingCard>
