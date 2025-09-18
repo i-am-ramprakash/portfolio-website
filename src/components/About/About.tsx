@@ -31,7 +31,7 @@ const About: React.FC = () => {
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-float"></div>
               <img 
-                src="/assets/Myanime.gif" 
+                src="/assets/my.gif" 
                 alt="Ramprakash Sah Portrait" 
                 className="relative w-48 h-48 md:w-full md:h-auto mx-auto rounded-full md:rounded-2xl object-cover shadow-2xl"
               />
