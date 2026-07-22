@@ -5,6 +5,9 @@ export interface Project {
   image: string;
   technologies: string[];
   link?: string;
+  role: string;
+  status: string;
+  outcome: string;
 }
 
 export interface Experience {
