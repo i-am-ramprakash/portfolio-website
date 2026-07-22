@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { ArrowUpRight, Check, Github, Share2 } from 'lucide-react';
+import { ArrowUpRight, Check, Github, Share2, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { projects } from '../../data/portfolio';
+import { Project } from '../../types';
 
 type CategoryFilter = 'all' | 'web' | 'mobile-games' | 'ai-security';
 
-export default function Projects() {
+interface ProjectsProps {
+  onInspectProject: (project: Project) => void;
+}
+
+export default function Projects({ onInspectProject }: ProjectsProps) {
   const [filter, setFilter] = useState<CategoryFilter>('all');
   const [shared, setShared] = useState<string | null>(null);
 
@@ -23,7 +28,7 @@ export default function Projects() {
         window.setTimeout(() => setShared(null), 2200); 
       }
     } catch { 
-      /* Handled native share cancellation */ 
+      /* Native share sheet dismissal */ 
     }
   };
 
@@ -56,7 +61,7 @@ export default function Projects() {
           <em>Engineered for real impact.</em>
         </h2>
         <p>
-          A curated collection of work across full-stack web engineering, mobile games, artificial intelligence, and cloud security.
+          Click any project card to inspect detailed architectural diagrams, tech stack specs, and key deliverables.
         </p>
       </div>
 
@@ -100,7 +105,12 @@ export default function Projects() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="project-visual">
+              <div 
+                className="project-visual" 
+                onClick={() => onInspectProject(project)}
+                style={{ cursor: 'pointer' }}
+                title="Click to inspect architecture"
+              >
                 <img 
                   src={project.image} 
                   alt={project.title} 
@@ -111,12 +121,17 @@ export default function Projects() {
                 />
                 <b>0{index + 1}</b>
                 <span>CASE STUDY / {project.technologies[0].toUpperCase()}</span>
+                <div className="visual-inspect-badge">
+                  <Maximize2 style={{ width: 14 }} /> Click to Inspect
+                </div>
               </div>
 
               <div className="project-info">
                 <div className="project-title">
                   <span>{project.status.toUpperCase()}</span>
-                  <h3>{project.title}</h3>
+                  <h3 onClick={() => onInspectProject(project)} style={{ cursor: 'pointer' }}>
+                    {project.title}
+                  </h3>
                 </div>
 
                 <div className="project-meta">
@@ -138,9 +153,18 @@ export default function Projects() {
                 </div>
 
                 <div className="project-actions">
+                  <button 
+                    className="primary-btn" 
+                    onClick={() => onInspectProject(project)}
+                    style={{ padding: '0 16px', height: 42, fontSize: 12 }}
+                  >
+                    <Maximize2 style={{ width: 14 }} /> Inspect Details
+                  </button>
+
                   <a href={project.link} target="_blank" rel="noreferrer">
-                    <Github /> View Repository <ArrowUpRight />
+                    <Github /> Code <ArrowUpRight />
                   </a>
+
                   <button 
                     onClick={() => share(project.id, project.title)} 
                     aria-label={`Share ${project.title}`}

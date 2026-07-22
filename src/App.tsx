@@ -8,6 +8,9 @@ import Experience from './components/Experience/Experience';
 import Projects from './components/Projects/Projects';
 import Contact from './components/Contact/Contact';
 import Footer from './components/Footer/Footer';
+import CommandPalette from './components/CommandPalette/CommandPalette';
+import ProjectModal from './components/Projects/ProjectModal';
+import { Project } from './types';
 
 const Enhanced3DBackground = lazy(() => import('./components/ThreeBackground/Enhanced3DBackground'));
 
@@ -15,6 +18,10 @@ function App() {
   const { isDark, toggleTheme } = useTheme();
   const [progress, setProgress] = useState(0);
   const [show3D, setShow3D] = useState(false);
+
+  // Interactivity Modal States
+  const [isCmdOpen, setIsCmdOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   useEffect(() => {
     const update = () => {
@@ -37,17 +44,44 @@ function App() {
       <a className="skip-link" href="#about">Skip to main content</a>
       <div className="scroll-progress" style={{ width: `${progress}%` }} />
       <div className="noise" aria-hidden="true" />
-      {show3D && <Suspense fallback={null}><Enhanced3DBackground isDark={isDark} /></Suspense>}
-      <Header isDark={isDark} toggleTheme={toggleTheme} />
+      
+      {show3D && (
+        <Suspense fallback={null}>
+          <Enhanced3DBackground isDark={isDark} />
+        </Suspense>
+      )}
+
+      <Header 
+        isDark={isDark} 
+        toggleTheme={toggleTheme} 
+        onOpenCommandPalette={() => setIsCmdOpen(true)}
+      />
+
       <main>
         <Hero />
         <About />
         <Skills />
         <Experience />
-        <Projects />
+        <Projects onInspectProject={proj => setSelectedProject(proj)} />
         <Contact />
       </main>
+
       <Footer />
+
+      {/* Interactive Command Palette Modal */}
+      <CommandPalette
+        isOpen={isCmdOpen}
+        onClose={() => setIsCmdOpen(false)}
+        isDark={isDark}
+        toggleTheme={toggleTheme}
+        onSelectProject={proj => setSelectedProject(proj)}
+      />
+
+      {/* Interactive Project Inspector Modal */}
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+      />
     </div>
   );
 }
