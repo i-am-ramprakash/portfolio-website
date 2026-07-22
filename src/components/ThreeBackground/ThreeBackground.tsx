@@ -93,7 +93,7 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({ isDark }) => {
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
     };
-  }, []);
+  }, [isDark]);
 
   useEffect(() => {
     if (particlesRef.current && particlesRef.current.material instanceof THREE.PointsMaterial) {

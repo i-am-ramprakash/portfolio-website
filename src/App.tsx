@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from './hooks/useTheme';
 import Enhanced3DBackground from './components/ThreeBackground/Enhanced3DBackground';
 import Header from './components/Header/Header';
@@ -12,13 +12,25 @@ import Footer from './components/Footer/Footer';
 
 function App() {
   const { isDark, toggleTheme } = useTheme();
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      const height = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(height > 0 ? (window.scrollY / height) * 100 : 0);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+    <div className="site-shell">
+      <div className="scroll-progress" style={{ width: `${progress}%` }} />
+      <div className="noise" aria-hidden="true" />
       <Enhanced3DBackground isDark={isDark} />
       <Header isDark={isDark} toggleTheme={toggleTheme} />
-      
-      <main className="relative z-10">
+      <main>
         <Hero />
         <About />
         <Skills />
@@ -26,7 +38,6 @@ function App() {
         <Projects />
         <Contact />
       </main>
-      
       <Footer />
     </div>
   );
