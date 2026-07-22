@@ -8,6 +8,9 @@ export interface Project {
   role: string;
   status: string;
   outcome: string;
+  challenge: string;
+  features: string[];
+  architecture: string;
 }
 
 export interface Experience {
@@ -17,13 +20,8 @@ export interface Experience {
   location: string;
   period: string;
   responsibilities: string[];
-}
-
-export interface Skill {
-  id: string;
-  name: string;
-  icon: string;
-  category: string;
+  technologies: string[];
+  objective: string;
 }
 
 export interface ContactFormData {

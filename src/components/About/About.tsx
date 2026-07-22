@@ -1,108 +1,18 @@
-import { ArrowUpRight, Cpu, ShieldCheck, Smartphone } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Braces, Layers3, ServerCog, ShieldCheck } from 'lucide-react';
+
+const stats = [['ROLE', 'Full-Stack Developer'], ['PRIMARY CLASS', 'Java + React Engineer'], ['BACKEND', 'Spring Boot + REST APIs'], ['FRONTEND', 'React + TypeScript + Angular'], ['PRODUCT FOCUS', 'Scalable interactive applications'], ['STYLE', 'Product-minded + end-to-end']];
 
 export default function About() {
-  return (
-    <section id="about" className="content-section section-pad">
-      <div className="section-kicker">
-        <span>01</span> ABOUT / PROFILE
-      </div>
-      
-      <div className="section-heading">
-        <h2>
-          Engineering with purpose.<br />
-          <em>Building for impact.</em>
-        </h2>
-        <p>
-          I bridge full-stack web engineering, native Android development, and intelligent cloud systems to deliver scalable digital products.
-        </p>
-      </div>
-
-      <div className="bento-grid">
-        {/* Main Bio Card */}
-        <motion.div 
-          className="bento-card bento-card-main"
-          whileHover={{ translateY: -4 }}
-          transition={{ duration: 0.2 }}
-        >
-          <h3>Full-Stack Developer & Product Architect</h3>
-          <p style={{ fontSize: '15px', color: 'var(--ink)', marginBottom: '16px', lineHeight: 1.6 }}>
-            I’m Ramprakash Sah—a software engineer dedicated to building fast, maintainable, and highly secure digital applications.
-          </p>
-          <p>
-            With experience spanning enterprise banking software at Tata Consultancy Services (TCS) and multi-vendor web platforms at Mentor Friends, I specialize in taking products from architectural concepts to production deployment.
-          </p>
-          <div style={{ marginTop: '24px' }}>
-            <a className="secondary-btn" href="mailto:ramprakash777.sah@gmail.com" style={{ display: 'inline-flex' }}>
-              Let’s discuss your project <ArrowUpRight style={{ width: 15 }} />
-            </a>
-          </div>
-        </motion.div>
-
-        {/* Stat Metrics Card */}
-        <motion.div 
-          className="bento-card bento-card-stat"
-          whileHover={{ translateY: -4 }}
-          transition={{ duration: 0.2 }}
-        >
-          <h3>Production Proof</h3>
-          <p>Proven execution across enterprise, mobile, and web applications.</p>
-          
-          <div className="metrics-row">
-            <div className="metric-box">
-              <b>06</b>
-              <small>Projects</small>
-            </div>
-            <div className="metric-box">
-              <b>3+</b>
-              <small>Years Exp</small>
-            </div>
-            <div className="metric-box">
-              <b>02</b>
-              <small>Companies</small>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Pillar 1 */}
-        <motion.div 
-          className="bento-card bento-card-pillar"
-          whileHover={{ translateY: -4 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="bento-icon"><Cpu style={{ width: 20, height: 20 }} /></div>
-          <h3>System Architecture</h3>
-          <p>
-            Designing clean service boundaries, RESTful APIs, Spring Boot backends, and robust database layers.
-          </p>
-        </motion.div>
-
-        {/* Pillar 2 */}
-        <motion.div 
-          className="bento-card bento-card-pillar"
-          whileHover={{ translateY: -4 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="bento-icon"><Smartphone style={{ width: 20, height: 20 }} /></div>
-          <h3>Frontend & Native Mobile</h3>
-          <p>
-            Crafting responsive React applications, Kotlin Jetpack Compose interfaces, and HTML5 Canvas game engines.
-          </p>
-        </motion.div>
-
-        {/* Pillar 3 */}
-        <motion.div 
-          className="bento-card bento-card-pillar"
-          whileHover={{ translateY: -4 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="bento-icon"><ShieldCheck style={{ width: 20, height: 20 }} /></div>
-          <h3>AI & Security</h3>
-          <p>
-            Integrating Google Gemini AI models, WebRTC live streams, and zero-knowledge AES-256 client encryption.
-          </p>
-        </motion.div>
-      </div>
-    </section>
-  );
+  return <section id="about" className="content-section section-pad" aria-labelledby="about-title">
+    <div className="section-kicker"><span>01</span> PLAYER PROFILE — ABOUT</div>
+    <div className="section-heading"><h2 id="about-title">A product engineer with<br /><em>full-stack range.</em></h2><p>Approximately three years across enterprise applications, marketplace systems, dashboards, APIs and interactive products.</p></div>
+    <div className="profile-grid">
+      <article className="profile-card profile-bio"><div className="profile-id"><span>RS</span><div><b>RAMPRAKASH SAH</b><small>PLAYER ID // FS-0323</small></div></div><p>I design and ship maintainable digital products across the stack. My experience spans enterprise banking software at TCS, multi-vendor platform development at Mentor Friends, and independent mobile, learning and security-focused products.</p><p>My best work connects dependable service architecture with interfaces that make complex workflows feel direct and approachable.</p></article>
+      <div className="profile-stats" aria-label="Professional profile attributes">{stats.map(([label, value]) => <div key={label}><span>{label}</span><b>{value}</b></div>)}</div>
+      <article className="profile-pillar"><ServerCog /><h3>Backend systems</h3><p>Java services, Spring Boot APIs, persistence and database-backed workflows.</p></article>
+      <article className="profile-pillar"><Braces /><h3>Frontend products</h3><p>Typed component systems, responsive dashboards and accessible interfaces.</p></article>
+      <article className="profile-pillar"><Layers3 /><h3>End-to-end ownership</h3><p>From requirements and architecture through implementation, testing and delivery.</p></article>
+      <article className="profile-pillar"><ShieldCheck /><h3>Role-aware platforms</h3><p>Authentication, permissions, secure workflows and multi-user product design.</p></article>
+    </div>
+  </section>;
 }

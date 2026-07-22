@@ -1,82 +1,46 @@
-import { useEffect, useState } from 'react';
-import { Menu, Moon, Sun, X, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Activity, Menu, Moon, Search, Sparkles, Sun, X } from 'lucide-react';
 
 interface HeaderProps {
+  activeZone: string;
+  progress: number;
   isDark: boolean;
   toggleTheme: () => void;
+  recruiterMode: boolean;
+  toggleRecruiter: () => void;
+  motionEnabled: boolean;
+  toggleMotion: () => void;
   onOpenCommandPalette: () => void;
 }
 
-const items = ['about', 'skills', 'experience', 'projects', 'contact'];
+const items = [
+  ['about', 'Profile', 'About'], ['skills', 'Skill Tree', 'Skills'], ['experience', 'Missions', 'Experience'],
+  ['projects', 'Worlds', 'Projects'], ['quest', 'Quest', 'Now'], ['contact', 'Portal', 'Contact'],
+];
 
-export default function Header({ isDark, toggleTheme, onOpenCommandPalette }: HeaderProps) {
+export default function Header(props: HeaderProps) {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [active, setActive] = useState('hero');
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 32);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const sections = ['hero', ...items].map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-    const observer = new IntersectionObserver(
-      entries => entries.forEach(entry => { if (entry.isIntersecting) setActive(entry.target.id); }), 
-      { rootMargin: '-35% 0px -55%' }
-    );
-    sections.forEach(section => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
-  const go = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setOpen(false);
-  };
-
+  const go = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: props.motionEnabled ? 'smooth' : 'auto' }); setOpen(false); };
+  const activeLabel = items.find(item => item[0] === props.activeZone)?.[1] ?? 'Command Center';
   return (
-    <header className={`nav-wrap ${scrolled ? 'nav-scrolled' : ''}`}>
-      <nav className="nav-panel" aria-label="Primary navigation">
-        <button className="brand" onClick={() => go('hero')} aria-label="Back to top">
-          <span className="brand-cube">RS</span>
-          <span><b>RAM</b><small>FULL-STACK DEVELOPER</small></span>
+    <header className="hud-wrap">
+      <nav className="hud" aria-label="Primary navigation">
+        <button className="brand" onClick={() => go('hero')} aria-label="Command Center — Home">
+          <span className="brand-mark"><span>RS</span></span>
+          <span><b>RAM'S DEVVERSE</b><small>FULL-STACK SYSTEM ONLINE</small></span>
         </button>
-
-        <div className={`nav-links ${open ? 'nav-open' : ''}`}>
-          {items.map((item, index) => (
-            <button 
-              key={item} 
-              className={active === item ? 'active' : ''} 
-              aria-current={active === item ? 'location' : undefined} 
-              onClick={() => go(item)}
-            >
-              <span>0{index + 1}</span>{item}
-            </button>
-          ))}
+        <div className={`zone-nav ${open ? 'nav-open' : ''}`}>
+          {items.map(([id, game, conventional], index) => <button key={id} className={props.activeZone === id ? 'active' : ''} onClick={() => go(id)} aria-current={props.activeZone === id ? 'location' : undefined}><span>0{index + 1}</span><b>{props.recruiterMode ? conventional : game}</b><small>{conventional}</small></button>)}
         </div>
-
-        <div className="nav-actions">
-          {/* Command Palette Trigger */}
-          <button 
-            className="cmd-trigger-btn" 
-            onClick={onOpenCommandPalette} 
-            title="Search or press Cmd + K"
-          >
-            <Search style={{ width: 14 }} />
-            <span>Search</span>
-            <kbd className="cmd-kbd">⌘K</kbd>
-          </button>
-
-          <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle color theme">
-            {isDark ? <Sun /> : <Moon />}
-          </button>
-          <button className="icon-btn menu-btn" onClick={() => setOpen(v => !v)} aria-label="Toggle menu" aria-expanded={open}>
-            {open ? <X /> : <Menu />}
-          </button>
+        <div className="hud-actions">
+          <button className={`recruiter-toggle ${props.recruiterMode ? 'active' : ''}`} onClick={props.toggleRecruiter}><Activity /> <span>Recruiter</span></button>
+          <button className="icon-btn command-button" onClick={props.onOpenCommandPalette} aria-label="Open command palette"><Search /><kbd>⌘K</kbd></button>
+          <button className="icon-btn desktop-control" onClick={props.toggleMotion} aria-label={`${props.motionEnabled ? 'Disable' : 'Enable'} motion`}><Sparkles className={props.motionEnabled ? '' : 'muted-icon'} /></button>
+          <button className="icon-btn desktop-control" onClick={props.toggleTheme} aria-label="Toggle color theme">{props.isDark ? <Sun /> : <Moon />}</button>
+          <button className="icon-btn menu-btn" onClick={() => setOpen(value => !value)} aria-label="Toggle navigation" aria-expanded={open}>{open ? <X /> : <Menu />}</button>
         </div>
       </nav>
+      <div className="hud-status"><span>ZONE // {activeLabel.toUpperCase()}</span><div><i style={{ width: `${props.progress}%` }} /></div><span>{props.progress}% EXPLORED</span></div>
     </header>
   );
 }

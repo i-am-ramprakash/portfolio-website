@@ -1,102 +1,19 @@
-import { useState } from 'react';
-import { Search, X, Check } from 'lucide-react';
-import { digitalSkills } from '../../data/portfolio';
+import { useMemo, useState } from 'react';
+import { Database, GitBranch, MonitorSmartphone, Search, Server, Sparkles, X } from 'lucide-react';
+import { digitalSkills, projects } from '../../data/portfolio';
+
+const icons = [Server, MonitorSmartphone, Database, GitBranch, Sparkles];
 
 export default function Skills() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
-
-  const handleSkillClick = (skill: string) => {
-    if (selectedSkill === skill) {
-      setSelectedSkill(null);
-    } else {
-      setSelectedSkill(skill);
-      // Also scroll to projects section to see projects using this tech
-      document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const filteredGroups = digitalSkills.map(group => {
-    const matchingSkills = group.skills.filter(s =>
-      s.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    return { ...group, skills: matchingSkills };
-  }).filter(group => group.skills.length > 0);
-
-  return (
-    <section id="skills" className="content-section section-pad skills-section">
-      <div className="section-kicker">
-        <span>02</span> CAPABILITIES / STACK
-      </div>
-
-      <div className="section-heading">
-        <h2>
-          Technologies I use to<br />
-          <em>bring ideas to life.</em>
-        </h2>
-        <p>
-          Type to search any technology or click a skill badge to filter corresponding projects.
-        </p>
-      </div>
-
-      {/* Interactive Skill Search Bar */}
-      <div className="skill-search-wrapper">
-        <Search className="search-icon" />
-        <input
-          type="text"
-          placeholder="Filter skills (e.g., React, Kotlin, Spring Boot, Firebase...)"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
-        {searchTerm && (
-          <button className="clear-btn" onClick={() => setSearchTerm('')}>
-            <X />
-          </button>
-        )}
-      </div>
-
-      <div className="skill-console">
-        <div className="console-top">
-          <span />
-          <span />
-          <span />
-          <b>ramprakash@dev-station: ~/capabilities {searchTerm ? `(filtered: "${searchTerm}")` : ''}</b>
-        </div>
-
-        <div className="skill-rows">
-          {filteredGroups.length > 0 ? (
-            filteredGroups.map((group, index) => (
-              <div className="skill-row" key={group.category}>
-                <div>
-                  <span>0{index + 1}</span>
-                  <h3>{group.category}</h3>
-                </div>
-                <div>
-                  {group.skills.map(skill => {
-                    const isSelected = selectedSkill === skill;
-                    return (
-                      <i 
-                        key={skill} 
-                        onClick={() => handleSkillClick(skill)}
-                        className={isSelected ? 'selected-skill' : ''}
-                        title="Click to jump to related projects"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {isSelected && <Check style={{ width: 12, marginRight: 4, display: 'inline' }} />}
-                        {skill}
-                      </i>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="skill-empty-state">
-              No skills found matching "{searchTerm}".
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<string | null>(null);
+  const groups = useMemo(() => digitalSkills.map(group => ({ ...group, skills: group.skills.filter(skill => skill.toLowerCase().includes(search.toLowerCase())) })).filter(group => group.skills.length), [search]);
+  const related = selected ? projects.filter(project => project.technologies.some(tech => tech.toLowerCase().includes(selected.toLowerCase()) || selected.toLowerCase().includes(tech.toLowerCase()))) : [];
+  return <section id="skills" className="content-section section-pad" aria-labelledby="skills-title">
+    <div className="section-kicker"><span>02</span> SKILL TREE — CAPABILITIES</div>
+    <div className="section-heading"><h2 id="skills-title">Tools connected by<br /><em>real product work.</em></h2><p>Explore a branch, then select a node to see where it appears in the project worlds.</p></div>
+    <div className="skill-search"><Search /><label className="sr-only" htmlFor="skill-filter">Filter skills</label><input id="skill-filter" value={search} onChange={event => setSearch(event.target.value)} placeholder="Filter the skill tree…" />{search && <button onClick={() => setSearch('')} aria-label="Clear filter"><X /></button>}</div>
+    <div className="skill-tree">{groups.map((group, index) => { const Icon = icons[index] ?? Sparkles; return <article className="skill-branch" key={group.category}><header><span><Icon /></span><div><small>BRANCH 0{index + 1}</small><h3>{group.category}</h3></div></header><div className="skill-nodes">{group.skills.map(skill => <button key={skill} className={selected === skill ? 'active' : ''} aria-pressed={selected === skill} onClick={() => setSelected(selected === skill ? null : skill)}><i />{skill}</button>)}</div></article>; })}</div>
+    <div className="skill-detail" aria-live="polite"><span>SELECTED NODE</span>{selected ? <><b>{selected}</b><p>{related.length ? `Used in: ${related.map(project => project.title).join(', ')}` : 'A supporting capability used across product and delivery work.'}</p></> : <p>Select any skill node to reveal its project connections.</p>}</div>
+  </section>;
 }

@@ -1,157 +1,29 @@
-import { useState } from 'react';
-import { ArrowDownRight, Github, Linkedin, Mail, Terminal as TerminalIcon, Sparkles } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Briefcase, Github, Linkedin, Mail, Radio, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function Hero() {
-  const [activeTab, setActiveTab] = useState<'featured' | 'stack' | 'bio'>('featured');
-
-  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-
-  return (
-    <section id="hero" className="hero section-pad">
-      <div className="hero-copy">
-        <motion.div 
-          className="eyebrow" 
-          initial={{ opacity: 0, y: 14 }} 
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <span className="live-dot" /> 
-          Full-Stack Developer @ Mentor Friends <span>• Kathmandu / Remote</span>
-        </motion.div>
-
-        <motion.h1 
-          initial={{ opacity: 0, y: 24 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.08 }}
-        >
-          Full-Stack &<br />
-          <span>Systems Engineer.</span>
-        </motion.h1>
-
-        <motion.p 
-          className="hero-lead" 
-          initial={{ opacity: 0, y: 16 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.16 }}
-        >
-          Crafting high-performance Android games, CEFR-aligned Goethe exam platforms, and zero-knowledge encrypted web applications.
-        </motion.p>
-
-        <motion.div 
-          className="hero-cta" 
-          initial={{ opacity: 0, y: 16 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.24 }}
-        >
-          <button className="primary-btn" onClick={() => scrollTo('projects')}>
-            Explore Selected Works <ArrowDownRight />
-          </button>
-          <button className="secondary-btn" onClick={() => scrollTo('contact')}>
-            <Mail /> Get in Touch
-          </button>
-        </motion.div>
-
-        <div className="hero-socials">
-          <span>CONNECT</span>
-          <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer" aria-label="GitHub">
-            <Github />
-          </a>
-          <a href="https://www.linkedin.com/in/ramprakash-sah-b368a5179/" target="_blank" rel="noreferrer" aria-label="LinkedIn">
-            <Linkedin />
-          </a>
-          <a href="mailto:ramprakash777.sah@gmail.com" aria-label="Email">
-            <Mail />
-          </a>
-        </div>
-      </div>
-
-      {/* Interactive Hero Terminal */}
-      <motion.div 
-        className="hero-terminal"
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <div className="terminal-header">
-          <div className="terminal-dots">
-            <span className="dot-red" />
-            <span className="dot-yellow" />
-            <span className="dot-green" />
-          </div>
-          <div className="terminal-title">
-            <TerminalIcon style={{ width: 12, height: 12, display: 'inline', marginRight: 6 }} /> 
-            ramprakash@dev-station:~
-          </div>
-          <div style={{ width: 40 }} />
-        </div>
-
-        <div className="terminal-tabs">
-          <button 
-            className={`terminal-tab ${activeTab === 'featured' ? 'active' : ''}`}
-            onClick={() => setActiveTab('featured')}
-          >
-            <Sparkles style={{ width: 11, height: 11 }} /> ~/featured.sh
-          </button>
-          <button 
-            className={`terminal-tab ${activeTab === 'stack' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stack')}
-          >
-            ~/stack.json
-          </button>
-          <button 
-            className={`terminal-tab ${activeTab === 'bio' ? 'active' : ''}`}
-            onClick={() => setActiveTab('bio')}
-          >
-            ~/bio.txt
-          </button>
-        </div>
-
-        <div className="terminal-body">
-          {activeTab === 'featured' && (
-            <div>
-              <p><span className="terminal-prompt">$</span> ./launch_showcase.sh --all</p>
-              <p className="terminal-comment"># Active flagship engineering deployments</p>
-              <p><span className="terminal-highlight">[01] MuTu LDR App</span> — <span className="terminal-string">WebRTC + Firebase + E2E Crypto + Gemini AI</span></p>
-              <p><span className="terminal-highlight">[02] Space Ludo</span> — <span className="terminal-string">Android Compose Shell + HTML5 Canvas Engine</span></p>
-              <p><span className="terminal-highlight">[03] DeutschSpaß</span> — <span className="terminal-string">Goethe Exam Prep + Spaced Repetition (SRS)</span></p>
-              <p className="terminal-comment"># All systems operational. 6 production projects built.</p>
-            </div>
-          )}
-
-          {activeTab === 'stack' && (
-            <div>
-              <p><span className="terminal-prompt">$</span> cat ~/tech-stack.json</p>
-              <pre className="terminal-json">
-{`{
-  "frontend": ["React", "TypeScript", "Tailwind", "Vite", "Zustand"],
-  "mobile": ["Kotlin", "Jetpack Compose", "Android SDK"],
-  "backend": ["Node.js", "Express", "Spring Boot", "Python"],
-  "cloud_db": ["Firebase", "Supabase", "PostgreSQL", "MongoDB"],
-  "ai_crypto": ["Google Gemini AI", "WebRTC", "AES-256"]
-}`}
-              </pre>
-            </div>
-          )}
-
-          {activeTab === 'bio' && (
-            <div>
-              <p><span className="terminal-prompt">$</span> cat ~/bio.txt</p>
-              <p style={{ marginTop: 8 }}>
-                Engineer with 3+ years experience spanning enterprise banking systems (TCS), multi-vendor platforms (Mentor Friends), and custom mobile/web products.
-              </p>
-              <p style={{ marginTop: 8, color: 'var(--accent)' }}>
-                Focus: Clean Service Boundaries, Performant Web/Mobile UIs, & Practical AI Integrations.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="terminal-actions">
-          <button className="terminal-btn" onClick={() => setActiveTab('featured')}>sh featured.sh</button>
-          <button className="terminal-btn" onClick={() => setActiveTab('stack')}>cat stack.json</button>
-          <button className="terminal-btn" onClick={() => setActiveTab('bio')}>cat bio.txt</button>
-        </div>
+export default function Hero({ onOpenCommandPalette }: { onOpenCommandPalette: () => void }) {
+  const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  return <section id="hero" className="hero section-pad" aria-labelledby="hero-title">
+    <div className="hero-copy">
+      <motion.div className="eyebrow" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}><span className="live-dot" /> AVAILABLE FOR SELECT ROLES <span>// KATHMANDU + REMOTE</span></motion.div>
+      <motion.p className="hero-code" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>PLAYER_01 / RAMPRAKASH SAH</motion.p>
+      <motion.h1 id="hero-title" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08 }}>Backend strength.<br /><span>Immersive interfaces.</span></motion.h1>
+      <motion.p className="hero-role" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .12 }}>FULL-STACK DEVELOPER — JAVA · SPRING BOOT · REACT · TYPESCRIPT</motion.p>
+      <motion.p className="hero-lead" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .16 }}>I build scalable products where robust backend engineering meets polished, interactive frontend experiences—from enterprise services and role-aware platforms to gamified web products.</motion.p>
+      <motion.div className="hero-cta" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .2 }}>
+        <button className="primary-btn" onClick={() => go('projects')}>Enter project worlds <ArrowUpRight /></button>
+        <button className="secondary-btn" onClick={() => go('experience')}><Briefcase /> Explore experience</button>
       </motion.div>
-    </section>
-  );
+      <div className="hero-links"><a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer"><Github /> GitHub</a><a href="https://www.linkedin.com/in/ramprakash-sah-b368a5179/" target="_blank" rel="noreferrer"><Linkedin /> LinkedIn</a><a href="mailto:ramprakash777.sah@gmail.com?subject=Resume%20request"><Mail /> Request résumé</a><button onClick={onOpenCommandPalette}><Search /> Command palette</button></div>
+    </div>
+    <motion.div className="hero-world" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: .16 }} aria-label="Abstract developer core visualization">
+      <div className="world-grid" aria-hidden="true" />
+      <div className="orbit orbit-one" aria-hidden="true"><i>JAVA</i><i>REACT</i></div><div className="orbit orbit-two" aria-hidden="true"><i>API</i><i>TS</i></div>
+      <div className="core"><span>RS</span><small>FULL STACK<br />CORE</small></div>
+      <div className="world-panel panel-top"><Radio /><span>SYSTEM STATUS</span><b>OPERATIONAL</b></div>
+      <div className="world-panel panel-bottom"><span>PRIMARY CLASS</span><b>JAVA + REACT ENGINEER</b></div>
+      <div className="coordinate">27.7172° N / DEVVERSE NODE</div>
+    </motion.div>
+    <button className="journey" onClick={() => go('about')}>BEGIN JOURNEY <ArrowDown /></button>
+  </section>;
 }
