@@ -2,8 +2,6 @@
 
 A modern, responsive, and visually stunning portfolio web application built with **React**, **TypeScript**, **Vite**, and **Tailwind CSS**. It showcases engineering projects, technical skill sets, professional work experience, and contact forms.
 
-![Portfolio Banner](public/projects/space-ludo.jpg)
-
 ---
 
 ## ✨ Features
