@@ -12,21 +12,21 @@ type Pose = { x: number; y: number; scale: number; rotation: number };
 type RobotArm = { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group };
 
 const desktopPoses: Record<CharacterZone, Pose> = {
-  hero: { x: 0, y: -0.35, scale: 0.95, rotation: 0 },
-  about: { x: 3.4, y: -0.38, scale: 0.88, rotation: -0.22 },
-  capabilities: { x: -3.4, y: -0.4, scale: 0.82, rotation: 0.26 },
-  career: { x: -3.6, y: -0.42, scale: 0.78, rotation: 0.28 },
-  work: { x: 3.5, y: -0.45, scale: 0.76, rotation: -0.26 },
-  contact: { x: -3.3, y: -0.4, scale: 0.82, rotation: 0.24 },
+  hero: { x: 0, y: -0.2, scale: 1.08, rotation: 0 },
+  about: { x: 3.6, y: -0.28, scale: 0.96, rotation: -0.22 },
+  capabilities: { x: -3.6, y: -0.3, scale: 0.92, rotation: 0.26 },
+  career: { x: -3.8, y: -0.32, scale: 0.88, rotation: 0.28 },
+  work: { x: 3.7, y: -0.35, scale: 0.86, rotation: -0.26 },
+  contact: { x: -3.5, y: -0.3, scale: 0.92, rotation: 0.24 },
 };
 
 const mobilePoses: Record<CharacterZone, Pose> = {
-  hero: { x: 0, y: -0.6, scale: 0.62, rotation: 0 },
-  about: { x: 1.5, y: -0.65, scale: 0.48, rotation: -0.28 },
-  capabilities: { x: -1.5, y: -0.68, scale: 0.45, rotation: 0.3 },
-  career: { x: -1.6, y: -0.7, scale: 0.42, rotation: 0.3 },
-  work: { x: 1.5, y: -0.7, scale: 0.42, rotation: -0.28 },
-  contact: { x: -1.4, y: -0.65, scale: 0.45, rotation: 0.26 },
+  hero: { x: 0, y: -0.45, scale: 0.72, rotation: 0 },
+  about: { x: 1.5, y: -0.5, scale: 0.56, rotation: -0.28 },
+  capabilities: { x: -1.5, y: -0.52, scale: 0.52, rotation: 0.3 },
+  career: { x: -1.6, y: -0.55, scale: 0.5, rotation: 0.3 },
+  work: { x: 1.5, y: -0.55, scale: 0.5, rotation: -0.28 },
+  contact: { x: -1.4, y: -0.5, scale: 0.52, rotation: 0.26 },
 };
 
 const sectionGaze: Record<CharacterZone, { x: number; y: number }> = {
@@ -79,68 +79,68 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(32, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0.55, 11.5);
+    const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0.2, 10.5);
 
     const root = new THREE.Group();
     scene.add(root);
 
-    // Premium Metallic Silver Armor Materials (matching silver reference robot)
+    // Dark near-black armor with orange glow accents — matching og-image-orange.jpg exactly
     const armor = new THREE.MeshPhysicalMaterial({
-      color: 0xb8c2cc,
-      metalness: 0.95,
-      roughness: 0.18,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.15,
+      color: 0x1a1c1f,
+      metalness: 0.88,
+      roughness: 0.28,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.2,
     });
     const armorDark = new THREE.MeshStandardMaterial({
-      color: 0x22262b,
-      metalness: 0.9,
-      roughness: 0.3,
+      color: 0x0d0e10,
+      metalness: 0.85,
+      roughness: 0.4,
     });
     const armorMid = new THREE.MeshPhysicalMaterial({
-      color: 0x788490,
-      metalness: 0.92,
-      roughness: 0.22,
-      clearcoat: 0.4,
+      color: 0x25292e,
+      metalness: 0.84,
+      roughness: 0.32,
+      clearcoat: 0.35,
     });
     const armorEdge = new THREE.MeshStandardMaterial({
-      color: 0xdbe2e8,
-      metalness: 0.98,
-      roughness: 0.12,
-    });
-    const jointMaterial = new THREE.MeshStandardMaterial({
-      color: 0x14171a,
-      metalness: 0.8,
-      roughness: 0.45,
-    });
-    const orangeMetal = new THREE.MeshStandardMaterial({
-      color: 0xeb5200,
-      emissive: 0x7a1700,
-      emissiveIntensity: 0.4,
-      metalness: 0.82,
+      color: 0x3a3f46,
+      metalness: 0.92,
       roughness: 0.22,
     });
+    const jointMaterial = new THREE.MeshStandardMaterial({
+      color: 0x080a0b,
+      metalness: 0.82,
+      roughness: 0.5,
+    });
+    const orangeMetal = new THREE.MeshStandardMaterial({
+      color: 0xff5500,
+      emissive: 0xcc2200,
+      emissiveIntensity: 0.8,
+      metalness: 0.75,
+      roughness: 0.18,
+    });
     const orangeGlow = new THREE.MeshStandardMaterial({
-      color: 0xffb566,
-      emissive: 0xff4800,
-      emissiveIntensity: 4.5,
-      roughness: 0.12,
-      metalness: 0.2,
+      color: 0xff9944,
+      emissive: 0xff5500,
+      emissiveIntensity: 6.5,
+      roughness: 0.06,
+      metalness: 0.1,
     });
     const pupilGlow = new THREE.MeshStandardMaterial({
-      color: 0xffffaa,
-      emissive: 0xff8800,
-      emissiveIntensity: 6,
-      roughness: 0.05,
+      color: 0xffdd88,
+      emissive: 0xff7700,
+      emissiveIntensity: 9,
+      roughness: 0.04,
     });
     const orangeGlass = new THREE.MeshPhysicalMaterial({
-      color: 0xff7a19,
-      emissive: 0xff3d00,
-      emissiveIntensity: 3.2,
-      metalness: 0.15,
-      roughness: 0.08,
-      transmission: 0.15,
+      color: 0xff6600,
+      emissive: 0xff4000,
+      emissiveIntensity: 5.0,
+      metalness: 0.05,
+      roughness: 0.04,
+      transmission: 0.1,
       thickness: 0.5,
       clearcoat: 1,
     });
@@ -181,9 +181,13 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       return mesh;
     };
 
-    const backlight = new THREE.PointLight(0xff5e00, 16, 15);
-    backlight.position.set(0, 1.8, -1.5);
+    // Strong orange backlight halo behind robot — matches the orange glow in og-image-orange.jpg
+    const backlight = new THREE.PointLight(0xff4d00, 32, 18);
+    backlight.position.set(0, 1.5, -2.0);
     scene.add(backlight);
+    const backlightWide = new THREE.PointLight(0xff3300, 20, 22);
+    backlightWide.position.set(0, 0.5, -1.8);
+    scene.add(backlightWide);
 
     // Torso: Faceted chest armor with seams matching og-image-orange.jpg
     const torso = new THREE.Group();
@@ -250,7 +254,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     coreOctagon.position.z = 0.225;
     reactor.add(coreOctagon);
 
-    const reactorLight = new THREE.PointLight(0xff4d00, 7.5, 4.2);
+    const reactorLight = new THREE.PointLight(0xff4d00, 16, 5.5);
     reactorLight.position.set(0, 0, 0.75);
     torso.add(reactorLight);
 
@@ -369,7 +373,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const lens = addFrontCylinder(eye, 0.088, 0.045, orangeGlass, 0.075, 24);
       const pupil = addFrontCylinder(eye, 0.042, 0.028, pupilGlow, 0.11, 20);
 
-      const eyeLight = new THREE.PointLight(0xff6600, 1.2, 1.5);
+      const eyeLight = new THREE.PointLight(0xff6600, 3.5, 2.2);
       eyeLight.position.z = 0.35;
       eye.add(eyeLight);
       return { eye, lens, pupil };
@@ -386,13 +390,13 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     mouthLight.position.set(0, -0.29, 0.68);
     head.add(mouthLight);
 
-    // Single sleek antenna on top-left of helmet (exact match to og-image-orange.jpg)
-    const antenna = makeCylinder(0.018, 0.025, 0.58, armorEdge, 8);
-    antenna.position.set(-0.49, 0.65, 0);
-    antenna.rotation.z = 0.08;
+    // Single sleek antenna on top-RIGHT of helmet (exact match to og-image-orange.jpg)
+    const antenna = makeCylinder(0.018, 0.026, 0.62, armorEdge, 8);
+    antenna.position.set(0.44, 0.68, 0);
+    antenna.rotation.z = -0.07;
     head.add(antenna);
-    const antennaTip = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 12), orangeGlow));
-    antennaTip.position.set(-0.515, 0.94, 0);
+    const antennaTip = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.052, 12, 12), orangeGlow));
+    antennaTip.position.set(0.46, 1.0, 0);
     head.add(antennaTip);
 
     // Robot arms with layered pauldrons & glowing joint rings
@@ -545,16 +549,20 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     );
     root.add(particles);
 
-    const ambient = new THREE.HemisphereLight(0xd7e0e8, 0x130500, 1.65);
-    const key = new THREE.DirectionalLight(0xffd2b0, 3.2);
-    key.position.set(4, 6, 6);
+    // Dark ambient — keep the body dark to match og-image-orange.jpg
+    const ambient = new THREE.HemisphereLight(0x1a1008, 0x050200, 0.9);
+    const key = new THREE.DirectionalLight(0xff7722, 2.5);
+    key.position.set(3, 5, 5);
     key.castShadow = true;
-    const orangeRim = new THREE.PointLight(0xff4d00, 18, 16);
-    orangeRim.position.set(3.5, 2.5, 4);
-    const coolRim = new THREE.PointLight(0x8aa3b8, 7, 14);
-    coolRim.position.set(-4, 3, 1);
-    const underGlow = new THREE.PointLight(0xff3d00, 6, 7);
-    underGlow.position.set(0, -2.2, 2);
+    // Strong orange rim light from upper-right (the main dramatic light in reference)
+    const orangeRim = new THREE.PointLight(0xff5500, 28, 18);
+    orangeRim.position.set(2.5, 3.5, 3.5);
+    // Left fill — subtle cool tint
+    const coolRim = new THREE.PointLight(0x1a1a2e, 4, 12);
+    coolRim.position.set(-3, 2.5, 1);
+    // Under glow — strong orange from below
+    const underGlow = new THREE.PointLight(0xff4400, 14, 9);
+    underGlow.position.set(0, -1.8, 2.5);
     scene.add(ambient, key, orangeRim, coolRim, underGlow);
 
     const pointer = new THREE.Vector2();
