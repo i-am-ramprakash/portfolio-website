@@ -13,11 +13,11 @@ type RobotArm = { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group 
 
 const desktopPoses: Record<CharacterZone, Pose> = {
   hero: { x: 0, y: -1.72, scale: 0.98, rotation: 0 },
-  about: { x: 3.35, y: -1.78, scale: 0.82, rotation: -0.3 },
-  capabilities: { x: -3.45, y: -1.82, scale: 0.72, rotation: 0.4 },
-  career: { x: 3.75, y: -2.02, scale: 0.64, rotation: -0.38 },
-  work: { x: -3.78, y: -2.08, scale: 0.6, rotation: 0.4 },
-  contact: { x: 3.42, y: -1.96, scale: 0.68, rotation: -0.34 },
+  about: { x: 3.12, y: -1.78, scale: 0.82, rotation: -0.24 },
+  capabilities: { x: -3.16, y: -1.82, scale: 0.72, rotation: 0.3 },
+  career: { x: 3.22, y: -2.02, scale: 0.64, rotation: -0.28 },
+  work: { x: -3.24, y: -2.08, scale: 0.6, rotation: 0.3 },
+  contact: { x: 3.08, y: -1.96, scale: 0.68, rotation: -0.24 },
 };
 
 const mobilePoses: Record<CharacterZone, Pose> = {
@@ -27,6 +27,15 @@ const mobilePoses: Record<CharacterZone, Pose> = {
   career: { x: 1.58, y: -2.48, scale: 0.36, rotation: -0.34 },
   work: { x: -1.52, y: -2.48, scale: 0.35, rotation: 0.36 },
   contact: { x: 1.42, y: -2.42, scale: 0.38, rotation: -0.28 },
+};
+
+const sectionGaze: Record<CharacterZone, { x: number; y: number }> = {
+  hero: { x: 0, y: 0 },
+  about: { x: 0.22, y: -0.03 },
+  capabilities: { x: -0.24, y: -0.05 },
+  career: { x: 0.2, y: 0.05 },
+  work: { x: -0.24, y: 0 },
+  contact: { x: 0.2, y: -0.02 },
 };
 
 const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterProps) => {
@@ -493,10 +502,15 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     let lastScroll = window.scrollY;
     let animationFrame = 0;
     let pageVisible = !document.hidden;
+    let lastPointerActivity = Number.NEGATIVE_INFINITY;
 
     const onPointerMove = (event: PointerEvent) => {
       pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
       pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      lastPointerActivity = performance.now();
+    };
+    const onPointerLeave = () => {
+      lastPointerActivity = Number.NEGATIVE_INFINITY;
     };
     const onScroll = () => {
       scrollVelocity += (window.scrollY - lastScroll) * 0.002;
@@ -518,6 +532,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     };
 
     window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onPointerLeave);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -531,7 +546,12 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const delta = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
       const zone = zoneRef.current;
-      const pose = (window.innerWidth < 800 ? mobilePoses : desktopPoses)[zone];
+      const viewportWidth = window.innerWidth;
+      const basePose = (viewportWidth < 800 ? mobilePoses : desktopPoses)[zone];
+      const compactDesktop = viewportWidth >= 800 && viewportWidth < 1180;
+      const pose = compactDesktop
+        ? { ...basePose, x: basePose.x * 0.72, scale: basePose.scale * 0.88 }
+        : basePose;
       const motion = !reducedMotionRef.current;
       const idle = motion ? Math.sin(elapsed * 1.35) * 0.045 : 0;
       const breathe = motion ? Math.sin(elapsed * 1.6) * 0.008 : 0;
@@ -539,42 +559,82 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       root.position.x = THREE.MathUtils.damp(root.position.x, pose.x, 3.1, delta);
       root.position.y = THREE.MathUtils.damp(root.position.y, pose.y + idle, 3.1, delta);
       root.rotation.y = THREE.MathUtils.damp(root.rotation.y, pose.rotation + scrollVelocity, 3.5, delta);
+      root.rotation.z = THREE.MathUtils.damp(
+        root.rotation.z,
+        motion ? Math.sin(elapsed * 0.72) * 0.008 : 0,
+        3.5,
+        delta,
+      );
       root.scale.setScalar(THREE.MathUtils.damp(root.scale.x, pose.scale, 3.2, delta));
       torso.scale.set(1 + breathe, 1 + breathe, 1 + breathe);
+      torso.rotation.y = motion ? Math.sin(elapsed * 0.82) * 0.018 : 0;
       scrollVelocity = THREE.MathUtils.damp(scrollVelocity, 0, 6, delta);
 
-      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, motion ? pointer.x * 0.25 : 0, 5, delta);
-      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, motion ? pointer.y * 0.1 : 0, 5, delta);
+      const pointerIsActive = motion && performance.now() - lastPointerActivity < 1800;
+      const automaticGaze = sectionGaze[zone];
+      const gazeX = pointerIsActive
+        ? -pointer.x * 0.36
+        : automaticGaze.x + (motion ? Math.sin(elapsed * 0.55) * 0.045 : 0);
+      const gazeY = pointerIsActive
+        ? -pointer.y * 0.17
+        : automaticGaze.y + (motion ? Math.sin(elapsed * 0.8) * 0.018 : 0);
+      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, gazeX, 11, delta);
+      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, gazeY, 11, delta);
+      head.position.y = motion ? Math.sin(elapsed * 1.35 + 0.4) * 0.018 : 0;
+
+      const pupilX = pointerIsActive ? -pointer.x * 0.025 : automaticGaze.x * 0.035;
+      const pupilY = pointerIsActive ? pointer.y * 0.018 : -automaticGaze.y * 0.025;
+      leftEye.pupil.position.x = THREE.MathUtils.damp(leftEye.pupil.position.x, pupilX, 14, delta);
+      leftEye.pupil.position.y = THREE.MathUtils.damp(leftEye.pupil.position.y, pupilY, 14, delta);
+      rightEye.pupil.position.x = THREE.MathUtils.damp(rightEye.pupil.position.x, pupilX, 14, delta);
+      rightEye.pupil.position.y = THREE.MathUtils.damp(rightEye.pupil.position.y, pupilY, 14, delta);
       const blink = motion && Math.sin(elapsed * 0.72) > 0.985 ? 0.18 : 1;
       leftEye.lens.scale.y = blink;
       leftEye.pupil.scale.y = blink;
       rightEye.lens.scale.y = blink;
       rightEye.pupil.scale.y = blink;
 
-      let leftShoulderTarget = 0.08;
-      let rightShoulderTarget = -0.08;
-      let leftElbowTarget = 0;
-      let rightElbowTarget = 0;
+      let leftShoulderTarget = motion ? -0.06 + Math.sin(elapsed * 0.85) * 0.025 : -0.06;
+      let rightShoulderTarget = motion ? 0.06 - Math.sin(elapsed * 0.85) * 0.025 : 0.06;
+      let leftElbowTarget = motion ? Math.sin(elapsed * 0.9) * 0.02 : 0;
+      let rightElbowTarget = motion ? -Math.sin(elapsed * 0.9) * 0.02 : 0;
+      let leftWristTarget = 0;
       let rightWristTarget = 0;
+      let armDepth = motion ? Math.sin(elapsed * 0.7) * 0.018 : 0;
 
-      if (zone === "about") {
-        rightShoulderTarget = -1.12;
-        rightElbowTarget = -0.72;
-        rightWristTarget = 0.28;
+      const heroGreeting = zone === "hero" && motion && elapsed % 9 < 3.2;
+      if (heroGreeting) {
+        rightShoulderTarget = 1.82;
+        rightElbowTarget = -0.52;
+        rightWristTarget = Math.sin(elapsed * 6.5) * 0.5;
+        armDepth = -0.12;
+      } else if (zone === "about") {
+        leftShoulderTarget = -1.08;
+        leftElbowTarget = 0.48;
+        leftWristTarget = -0.18;
+        armDepth = 0.08;
       } else if (zone === "capabilities") {
-        leftShoulderTarget = -0.68;
-        rightShoulderTarget = 0.68;
-        leftElbowTarget = motion ? Math.sin(elapsed * 8) * 0.18 - 0.68 : -0.68;
-        rightElbowTarget = motion ? -Math.sin(elapsed * 8) * 0.18 + 0.68 : 0.68;
+        leftShoulderTarget = 0.38;
+        rightShoulderTarget = 1.02;
+        leftElbowTarget = motion ? Math.sin(elapsed * 7) * 0.14 - 0.42 : -0.42;
+        rightElbowTarget = motion ? -Math.sin(elapsed * 7) * 0.14 - 0.62 : -0.62;
+        leftWristTarget = motion ? Math.sin(elapsed * 7) * 0.1 : 0;
+        rightWristTarget = motion ? -Math.sin(elapsed * 7) * 0.1 : 0;
+        armDepth = -0.16;
       } else if (zone === "career") {
-        rightElbowTarget = -0.3;
+        leftShoulderTarget = -0.96;
+        leftElbowTarget = 0.42;
+        leftWristTarget = -0.12;
       } else if (zone === "work") {
-        leftShoulderTarget = -1.02;
-        leftElbowTarget = -0.78;
+        rightShoulderTarget = 1.06;
+        rightElbowTarget = -0.46;
+        rightWristTarget = 0.12;
+        armDepth = -0.08;
       } else if (zone === "contact") {
-        rightShoulderTarget = -2.25;
-        rightElbowTarget = motion ? Math.sin(elapsed * 5) * 0.34 - 0.42 : -0.42;
-        rightWristTarget = motion ? Math.sin(elapsed * 5) * 0.3 : 0.15;
+        leftShoulderTarget = -2.05;
+        leftElbowTarget = 0.46;
+        leftWristTarget = motion ? Math.sin(elapsed * 5.4) * 0.48 : -0.12;
+        armDepth = -0.1;
       }
 
       leftArm.shoulder.rotation.z = THREE.MathUtils.damp(
@@ -599,6 +659,24 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         rightArm.elbow.rotation.z,
         rightElbowTarget,
         6,
+        delta,
+      );
+      leftArm.shoulder.rotation.x = THREE.MathUtils.damp(
+        leftArm.shoulder.rotation.x,
+        armDepth,
+        7,
+        delta,
+      );
+      rightArm.shoulder.rotation.x = THREE.MathUtils.damp(
+        rightArm.shoulder.rotation.x,
+        -armDepth,
+        7,
+        delta,
+      );
+      leftArm.wrist.rotation.z = THREE.MathUtils.damp(
+        leftArm.wrist.rotation.z,
+        leftWristTarget,
+        10,
         delta,
       );
       rightArm.wrist.rotation.z = THREE.MathUtils.damp(
@@ -628,6 +706,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     return () => {
       window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVisibilityChange);
