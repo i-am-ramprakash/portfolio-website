@@ -85,62 +85,65 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     const root = new THREE.Group();
     scene.add(root);
 
-    // Dark near-black armor with orange glow accents — matching og-image-orange.jpg exactly
+    // Dark charcoal armor matching og-image-orange.jpg — faceted dark panels with silver metallic sheen on edges
     const armor = new THREE.MeshPhysicalMaterial({
-      color: 0x1a1c1f,
-      metalness: 0.88,
-      roughness: 0.28,
-      clearcoat: 0.5,
-      clearcoatRoughness: 0.2,
-    });
-    const armorDark = new THREE.MeshStandardMaterial({
-      color: 0x0d0e10,
-      metalness: 0.85,
-      roughness: 0.4,
-    });
-    const armorMid = new THREE.MeshPhysicalMaterial({
-      color: 0x25292e,
-      metalness: 0.84,
-      roughness: 0.32,
-      clearcoat: 0.35,
-    });
-    const armorEdge = new THREE.MeshStandardMaterial({
-      color: 0x3a3f46,
+      color: 0x1c2025,
       metalness: 0.92,
       roughness: 0.22,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.12,
+      envMapIntensity: 1.2,
+    });
+    const armorDark = new THREE.MeshStandardMaterial({
+      color: 0x0a0c0e,
+      metalness: 0.9,
+      roughness: 0.35,
+    });
+    const armorMid = new THREE.MeshPhysicalMaterial({
+      color: 0x22272d,
+      metalness: 0.88,
+      roughness: 0.25,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.1,
+    });
+    // Silver-tinted edge highlight — catches the orange rim as white-silver specular
+    const armorEdge = new THREE.MeshStandardMaterial({
+      color: 0x8a9299,
+      metalness: 0.98,
+      roughness: 0.08,
     });
     const jointMaterial = new THREE.MeshStandardMaterial({
-      color: 0x080a0b,
-      metalness: 0.82,
-      roughness: 0.5,
+      color: 0x070809,
+      metalness: 0.85,
+      roughness: 0.48,
     });
     const orangeMetal = new THREE.MeshStandardMaterial({
       color: 0xff5500,
       emissive: 0xcc2200,
-      emissiveIntensity: 0.8,
-      metalness: 0.75,
-      roughness: 0.18,
+      emissiveIntensity: 1.0,
+      metalness: 0.72,
+      roughness: 0.16,
     });
     const orangeGlow = new THREE.MeshStandardMaterial({
       color: 0xff9944,
       emissive: 0xff5500,
-      emissiveIntensity: 6.5,
-      roughness: 0.06,
-      metalness: 0.1,
+      emissiveIntensity: 7.0,
+      roughness: 0.05,
+      metalness: 0.08,
     });
     const pupilGlow = new THREE.MeshStandardMaterial({
-      color: 0xffdd88,
-      emissive: 0xff7700,
-      emissiveIntensity: 9,
-      roughness: 0.04,
+      color: 0xffee99,
+      emissive: 0xff8800,
+      emissiveIntensity: 10,
+      roughness: 0.03,
     });
     const orangeGlass = new THREE.MeshPhysicalMaterial({
       color: 0xff6600,
-      emissive: 0xff4000,
-      emissiveIntensity: 5.0,
-      metalness: 0.05,
-      roughness: 0.04,
-      transmission: 0.1,
+      emissive: 0xff4400,
+      emissiveIntensity: 5.5,
+      metalness: 0.04,
+      roughness: 0.03,
+      transmission: 0.08,
       thickness: 0.5,
       clearcoat: 1,
     });
@@ -549,21 +552,25 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     );
     root.add(particles);
 
-    // Dark ambient — keep the body dark to match og-image-orange.jpg
-    const ambient = new THREE.HemisphereLight(0x1a1008, 0x050200, 0.9);
-    const key = new THREE.DirectionalLight(0xff7722, 2.5);
-    key.position.set(3, 5, 5);
+    // Ambient: slightly warm dark — body stays near-black, silver edges catch specular
+    const ambient = new THREE.HemisphereLight(0x241510, 0x060402, 1.1);
+    // Key light: warm orange-white from front-right top — illuminates silver facet edges
+    const key = new THREE.DirectionalLight(0xffa060, 3.8);
+    key.position.set(4, 6, 7);
     key.castShadow = true;
-    // Strong orange rim light from upper-right (the main dramatic light in reference)
-    const orangeRim = new THREE.PointLight(0xff5500, 28, 18);
-    orangeRim.position.set(2.5, 3.5, 3.5);
-    // Left fill — subtle cool tint
-    const coolRim = new THREE.PointLight(0x1a1a2e, 4, 12);
-    coolRim.position.set(-3, 2.5, 1);
-    // Under glow — strong orange from below
-    const underGlow = new THREE.PointLight(0xff4400, 14, 9);
-    underGlow.position.set(0, -1.8, 2.5);
-    scene.add(ambient, key, orangeRim, coolRim, underGlow);
+    // Strong orange rim — the dramatic halo visible in reference
+    const orangeRim = new THREE.PointLight(0xff5500, 32, 20);
+    orangeRim.position.set(2.5, 3.8, -1.5);
+    // Secondary rim from opposite side — subtle
+    const coolRim = new THREE.PointLight(0x602010, 6, 14);
+    coolRim.position.set(-3.5, 2, 0.5);
+    // Under glow — floor-bounce orange
+    const underGlow = new THREE.PointLight(0xff4400, 16, 10);
+    underGlow.position.set(0, -1.6, 2.8);
+    // Fill light from front — makes silver edges visible as silver/white specular
+    const frontFill = new THREE.PointLight(0xffe8d0, 2.5, 12);
+    frontFill.position.set(0, 1.5, 8);
+    scene.add(ambient, key, orangeRim, coolRim, underGlow, frontFill);
 
     const pointer = new THREE.Vector2();
     let scrollVelocity = 0;
@@ -572,16 +579,75 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     let isRendering = false;
     let lastPointerActivity = Number.NEGATIVE_INFINITY;
 
+    // ── Spring / gravity physics state ───────────────────────────────────────
+    // Each spring: { pos, vel } — pos is displacement from rest, vel is velocity
+    type Sp = { pos: number; vel: number };
+    const mkSp = (): Sp => ({ pos: 0, vel: 0 });
+    const sp = {
+      headX:   mkSp(), headY:   mkSp(),
+      torso:   mkSp(),
+      lShoulderZ: mkSp(), rShoulderZ: mkSp(),
+      lShoulderX: mkSp(), rShoulderX: mkSp(),
+      lElbow: mkSp(),   rElbow: mkSp(),
+      lWrist: mkSp(),   rWrist: mkSp(),
+      lLeg:   mkSp(),   rLeg:   mkSp(),
+    };
+    // Integrate a spring toward target, returns new pos
+    const spring = (s: Sp, target: number, k: number, damp: number, dt: number): number => {
+      const err = s.pos - target;
+      s.vel += (-k * err - damp * s.vel) * dt;
+      s.pos += s.vel * dt;
+      return s.pos;
+    };
+    // Apply an impulse (velocity kick) to a spring
+    const kick = (s: Sp, impulse: number) => { s.vel += impulse; };
+    // ─────────────────────────────────────────────────────────────────────────
+
     const onPointerMove = (event: PointerEvent) => {
-      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      const nx = (event.clientX / window.innerWidth) * 2 - 1;
+      const ny = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      // Velocity of pointer movement
+      const dvx = nx - pointer.x;
+      const dvy = ny - pointer.y;
+      const speed = Math.sqrt(dvx * dvx + dvy * dvy);
+
+      if (speed > 0.004) {
+        // Scale impulse — faster swipe = bigger kick
+        const imp = Math.min(speed * 6, 1.4);
+        // Head wobbles toward swipe direction
+        kick(sp.headX, -dvx * imp * 1.8);
+        kick(sp.headY, dvy * imp * 1.2);
+        // Torso sway
+        kick(sp.torso, dvx * imp * 0.5);
+        // Arms react — left/right based on which side of screen
+        if (nx < 0) {
+          kick(sp.lShoulderZ, -imp * 0.55);
+          kick(sp.lElbow, imp * 0.4);
+          kick(sp.lWrist, imp * 0.8);
+        } else {
+          kick(sp.rShoulderZ, imp * 0.55);
+          kick(sp.rElbow, -imp * 0.4);
+          kick(sp.rWrist, -imp * 0.8);
+        }
+        // Legs subtle sway
+        kick(sp.lLeg, dvy * imp * 0.18);
+        kick(sp.rLeg, -dvy * imp * 0.18);
+      }
+
+      pointer.x = nx;
+      pointer.y = ny;
       lastPointerActivity = performance.now();
     };
     const onPointerLeave = () => {
       lastPointerActivity = Number.NEGATIVE_INFINITY;
     };
     const onScroll = () => {
-      scrollVelocity += (window.scrollY - lastScroll) * 0.002;
+      const delta = window.scrollY - lastScroll;
+      scrollVelocity += delta * 0.002;
+      // Scroll shakes body
+      kick(sp.torso, delta * 0.003);
+      kick(sp.headY, -delta * 0.002);
       lastScroll = window.scrollY;
     };
     const onContextLost = (event: Event) => {
@@ -620,23 +686,30 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const targetX = compactDesktop ? basePose.x * 0.72 : basePose.x;
 
       const motion = !reducedMotionRef.current;
-      const idle = motion ? Math.sin(elapsed * 1.35) * 0.045 : 0;
+      // Slow breathing idle oscillation
+      const idle  = motion ? Math.sin(elapsed * 1.35) * 0.045 : 0;
       const breathe = motion ? Math.sin(elapsed * 1.6) * 0.008 : 0;
 
+      // ── Root pose ─────────────────────────────────────────────────────────
       root.position.x = THREE.MathUtils.damp(root.position.x, targetX, 3.1, delta);
       root.position.y = THREE.MathUtils.damp(root.position.y, basePose.y + idle, 3.1, delta);
-      root.rotation.y = THREE.MathUtils.damp(root.rotation.y, basePose.rotation + scrollVelocity, 3.5, delta);
+      root.rotation.y = THREE.MathUtils.damp(
+        root.rotation.y,
+        basePose.rotation + scrollVelocity + spring(sp.torso, 0, 14, 4.5, delta) * 0.18,
+        3.5, delta,
+      );
       root.rotation.z = THREE.MathUtils.damp(
         root.rotation.z,
         motion ? Math.sin(elapsed * 0.72) * 0.008 : 0,
-        3.5,
-        delta,
+        3.5, delta,
       );
       root.scale.setScalar(THREE.MathUtils.damp(root.scale.x, targetScale, 3.2, delta));
+      // Torso breathe + spring sway
       torso.scale.set(1 + breathe, 1 + breathe, 1 + breathe);
       torso.rotation.y = motion ? Math.sin(elapsed * 0.82) * 0.018 : 0;
       scrollVelocity = THREE.MathUtils.damp(scrollVelocity, 0, 6, delta);
 
+      // ── Head: FIX — bob AROUND base y=2.7, never overwrite it ─────────────
       const pointerIsActive = motion && performance.now() - lastPointerActivity < 1800;
       const automaticGaze = sectionGaze[zone];
       const gazeX = pointerIsActive
@@ -645,116 +718,100 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const gazeY = pointerIsActive
         ? -pointer.y * 0.17
         : automaticGaze.y + (motion ? Math.sin(elapsed * 0.8) * 0.018 : 0);
-      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, gazeX, 11, delta);
-      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, gazeY, 11, delta);
-      head.position.y = motion ? Math.sin(elapsed * 1.35 + 0.4) * 0.018 : 0;
 
+      // Spring physics add on top of gaze target
+      const headSpX = spring(sp.headX, 0, 16, 5.5, delta);
+      const headSpY = spring(sp.headY, 0, 16, 5.5, delta);
+      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, gazeX + headSpX * 0.4, 11, delta);
+      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, gazeY + headSpY * 0.25, 11, delta);
+      // ⚠️ CRITICAL: add to base y=2.7, never zero it out
+      const headBob = motion ? Math.sin(elapsed * 1.35 + 0.4) * 0.018 : 0;
+      head.position.y = 2.7 + headBob + headSpY * 0.04;
+
+      // ── Eyes & blink ──────────────────────────────────────────────────────
       const pupilX = pointerIsActive ? -pointer.x * 0.025 : automaticGaze.x * 0.035;
       const pupilY = pointerIsActive ? pointer.y * 0.018 : -automaticGaze.y * 0.025;
-      leftEye.pupil.position.x = THREE.MathUtils.damp(leftEye.pupil.position.x, pupilX, 14, delta);
-      leftEye.pupil.position.y = THREE.MathUtils.damp(leftEye.pupil.position.y, pupilY, 14, delta);
+      leftEye.pupil.position.x  = THREE.MathUtils.damp(leftEye.pupil.position.x,  pupilX, 14, delta);
+      leftEye.pupil.position.y  = THREE.MathUtils.damp(leftEye.pupil.position.y,  pupilY, 14, delta);
       rightEye.pupil.position.x = THREE.MathUtils.damp(rightEye.pupil.position.x, pupilX, 14, delta);
       rightEye.pupil.position.y = THREE.MathUtils.damp(rightEye.pupil.position.y, pupilY, 14, delta);
       const blink = motion && Math.sin(elapsed * 0.72) > 0.985 ? 0.18 : 1;
-      leftEye.lens.scale.y = blink;
-      leftEye.pupil.scale.y = blink;
-      rightEye.lens.scale.y = blink;
-      rightEye.pupil.scale.y = blink;
+      leftEye.lens.scale.y  = blink; leftEye.pupil.scale.y  = blink;
+      rightEye.lens.scale.y = blink; rightEye.pupil.scale.y = blink;
 
-      let leftShoulderTarget = motion ? -0.06 + Math.sin(elapsed * 0.85) * 0.025 : -0.06;
-      let rightShoulderTarget = motion ? 0.06 - Math.sin(elapsed * 0.85) * 0.025 : 0.06;
-      let leftElbowTarget = motion ? Math.sin(elapsed * 0.9) * 0.02 : 0;
+      // ── Arm targets (zone-based) ───────────────────────────────────────────
+      let leftShoulderTarget  = motion ? -0.06 + Math.sin(elapsed * 0.85) * 0.025 : -0.06;
+      let rightShoulderTarget = motion ?  0.06 - Math.sin(elapsed * 0.85) * 0.025 :  0.06;
+      let leftElbowTarget  = motion ? Math.sin(elapsed * 0.9) * 0.02 : 0;
       let rightElbowTarget = motion ? -Math.sin(elapsed * 0.9) * 0.02 : 0;
-      let leftWristTarget = 0;
-      let rightWristTarget = 0;
+      let leftWristTarget = 0, rightWristTarget = 0;
       let armDepth = motion ? Math.sin(elapsed * 0.7) * 0.018 : 0;
 
       const heroGreeting = zone === "hero" && motion && elapsed % 9 < 3.2;
       if (heroGreeting) {
-        rightShoulderTarget = 1.82;
-        rightElbowTarget = -0.52;
-        rightWristTarget = Math.sin(elapsed * 6.5) * 0.5;
-        armDepth = -0.12;
+        rightShoulderTarget = 1.82; rightElbowTarget = -0.52;
+        rightWristTarget = Math.sin(elapsed * 6.5) * 0.5; armDepth = -0.12;
       } else if (zone === "about") {
-        leftShoulderTarget = -1.08;
-        leftElbowTarget = 0.48;
-        leftWristTarget = -0.18;
-        armDepth = 0.08;
+        leftShoulderTarget = -1.08; leftElbowTarget = 0.48;
+        leftWristTarget = -0.18; armDepth = 0.08;
       } else if (zone === "capabilities") {
-        leftShoulderTarget = 0.38;
-        rightShoulderTarget = 1.02;
-        leftElbowTarget = motion ? Math.sin(elapsed * 7) * 0.14 - 0.42 : -0.42;
+        leftShoulderTarget = 0.38; rightShoulderTarget = 1.02;
+        leftElbowTarget  = motion ? Math.sin(elapsed * 7) * 0.14 - 0.42 : -0.42;
         rightElbowTarget = motion ? -Math.sin(elapsed * 7) * 0.14 - 0.62 : -0.62;
-        leftWristTarget = motion ? Math.sin(elapsed * 7) * 0.1 : 0;
+        leftWristTarget  = motion ? Math.sin(elapsed * 7) * 0.1 : 0;
         rightWristTarget = motion ? -Math.sin(elapsed * 7) * 0.1 : 0;
         armDepth = -0.16;
       } else if (zone === "career") {
-        leftShoulderTarget = -0.96;
-        leftElbowTarget = 0.42;
-        leftWristTarget = -0.12;
+        leftShoulderTarget = -0.96; leftElbowTarget = 0.42; leftWristTarget = -0.12;
       } else if (zone === "work") {
-        rightShoulderTarget = 1.06;
-        rightElbowTarget = -0.46;
-        rightWristTarget = 0.12;
-        armDepth = -0.08;
+        rightShoulderTarget = 1.06; rightElbowTarget = -0.46;
+        rightWristTarget = 0.12; armDepth = -0.08;
       } else if (zone === "contact") {
-        leftShoulderTarget = -2.05;
-        leftElbowTarget = 0.46;
+        leftShoulderTarget = -2.05; leftElbowTarget = 0.46;
         leftWristTarget = motion ? Math.sin(elapsed * 5.4) * 0.48 : -0.12;
         armDepth = -0.1;
       }
 
-      leftArm.shoulder.rotation.z = THREE.MathUtils.damp(
-        leftArm.shoulder.rotation.z,
-        leftShoulderTarget,
-        5,
-        delta,
-      );
-      rightArm.shoulder.rotation.z = THREE.MathUtils.damp(
-        rightArm.shoulder.rotation.z,
-        rightShoulderTarget,
-        5,
-        delta,
-      );
-      leftArm.elbow.rotation.z = THREE.MathUtils.damp(
-        leftArm.elbow.rotation.z,
-        leftElbowTarget,
-        6,
-        delta,
-      );
-      rightArm.elbow.rotation.z = THREE.MathUtils.damp(
-        rightArm.elbow.rotation.z,
-        rightElbowTarget,
-        6,
-        delta,
-      );
-      leftArm.shoulder.rotation.x = THREE.MathUtils.damp(
-        leftArm.shoulder.rotation.x,
-        armDepth,
-        7,
-        delta,
-      );
-      rightArm.shoulder.rotation.x = THREE.MathUtils.damp(
-        rightArm.shoulder.rotation.x,
-        -armDepth,
-        7,
-        delta,
-      );
-      leftArm.wrist.rotation.z = THREE.MathUtils.damp(
-        leftArm.wrist.rotation.z,
-        leftWristTarget,
-        10,
-        delta,
-      );
-      rightArm.wrist.rotation.z = THREE.MathUtils.damp(
-        rightArm.wrist.rotation.z,
-        rightWristTarget,
-        6,
-        delta,
-      );
-      leftLeg.rotation.x = motion ? Math.sin(elapsed * 1.2) * 0.014 : 0;
-      rightLeg.rotation.x = motion ? -Math.sin(elapsed * 1.2) * 0.014 : 0;
+      // ── Physics springs added on top of zone targets ───────────────────────
+      // Spring stiffness=20, damping=5 for snappy but bouncy joints
+      const lsz = spring(sp.lShoulderZ, 0, 20, 5, delta);
+      const rsz = spring(sp.rShoulderZ, 0, 20, 5, delta);
+      const lsx = spring(sp.lShoulderX, 0, 18, 5, delta);
+      const rsx = spring(sp.rShoulderX, 0, 18, 5, delta);
+      const lez = spring(sp.lElbow,     0, 22, 5.5, delta);
+      const rez = spring(sp.rElbow,     0, 22, 5.5, delta);
+      const lwz = spring(sp.lWrist,     0, 26, 6, delta);
+      const rwz = spring(sp.rWrist,     0, 26, 6, delta);
+      const llx = spring(sp.lLeg,       0, 18, 5, delta);
+      const rlx = spring(sp.rLeg,       0, 18, 5, delta);
 
+      // Gravity droop on arms — forearms hang naturally
+      const gravityDroop = motion ? 0.06 : 0;
+
+      leftArm.shoulder.rotation.z = THREE.MathUtils.damp(
+        leftArm.shoulder.rotation.z, leftShoulderTarget + lsz * 0.55, 5, delta);
+      rightArm.shoulder.rotation.z = THREE.MathUtils.damp(
+        rightArm.shoulder.rotation.z, rightShoulderTarget + rsz * 0.55, 5, delta);
+      leftArm.elbow.rotation.z = THREE.MathUtils.damp(
+        leftArm.elbow.rotation.z, leftElbowTarget + lez * 0.45 + gravityDroop, 6, delta);
+      rightArm.elbow.rotation.z = THREE.MathUtils.damp(
+        rightArm.elbow.rotation.z, rightElbowTarget + rez * 0.45 - gravityDroop, 6, delta);
+      leftArm.shoulder.rotation.x = THREE.MathUtils.damp(
+        leftArm.shoulder.rotation.x, armDepth + lsx * 0.35, 7, delta);
+      rightArm.shoulder.rotation.x = THREE.MathUtils.damp(
+        rightArm.shoulder.rotation.x, -armDepth + rsx * 0.35, 7, delta);
+      leftArm.wrist.rotation.z = THREE.MathUtils.damp(
+        leftArm.wrist.rotation.z, leftWristTarget + lwz * 0.7, 10, delta);
+      rightArm.wrist.rotation.z = THREE.MathUtils.damp(
+        rightArm.wrist.rotation.z, rightWristTarget + rwz * 0.7, 6, delta);
+
+      // Legs — subtle sway with spring
+      const baseL = motion ? Math.sin(elapsed * 1.2) * 0.014 : 0;
+      const baseR = motion ? -Math.sin(elapsed * 1.2) * 0.014 : 0;
+      leftLeg.rotation.x  = baseL + llx * 0.12;
+      rightLeg.rotation.x = baseR + rlx * 0.12;
+
+      // ── FX ────────────────────────────────────────────────────────────────
       const hologramOpacity = zone === "capabilities" || zone === "work" ? 0.18 : 0;
       hologramMaterial.opacity = THREE.MathUtils.damp(hologramMaterial.opacity, hologramOpacity, 4, delta);
       const edgeMaterial = hologramEdges.material as THREE.LineBasicMaterial;
@@ -762,9 +819,9 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       hologram.rotation.y = motion ? Math.sin(elapsed * 0.7) * 0.08 : 0;
       chestCore.rotation.y += motion ? delta * 1.2 : 0;
       reactorOrangeRing.rotation.z -= motion ? delta * 0.2 : 0;
-      reactorLight.intensity = 7.5 + (motion ? Math.sin(elapsed * 2.4) * 0.8 : 0);
-      floorRing.rotation.z += motion ? delta * 0.15 : 0;
-      particles.rotation.y += motion ? delta * 0.025 : 0;
+      reactorLight.intensity = 16 + (motion ? Math.sin(elapsed * 2.4) * 2.5 : 0);
+      floorRing.rotation.z  += motion ? delta * 0.15 : 0;
+      particles.rotation.y  += motion ? delta * 0.025 : 0;
 
       renderer.render(scene, camera);
     };
