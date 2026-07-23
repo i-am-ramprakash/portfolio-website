@@ -1,6 +1,6 @@
-# Ram Prakash - Developer Portfolio Website
+# Ram Prakash — Full-Stack Systems Engineer Portfolio
 
-A modern, responsive, and visually stunning portfolio web application built with **React**, **TypeScript**, **Vite**, and **Tailwind CSS**. It showcases engineering projects, technical skill sets, professional work experience, and contact forms.
+An orange, interactive portfolio built with **React**, **TypeScript**, **Vite**, and **Three.js**. It presents engineering projects, technical skills, professional experience, and direct contact paths.
 
 ---
 
@@ -22,6 +22,7 @@ A modern, responsive, and visually stunning portfolio web application built with
 - **Build Tool**: Vite
 - **Styling**: Vanilla CSS & Custom Design System (`index.css`) / Tailwind CSS
 - **Icons**: Lucide React (`lucide-react`)
+- **Interactive character**: Three.js primitives with section-aware animation and a CSS/WebGL fallback
 - **Deployment**: Vercel / GitHub Pages
 
 ---
@@ -96,3 +97,7 @@ npm run build
 ```
 
 The output will be generated in the `dist/` directory ready for deployment.
+
+## Design inspiration and attribution
+
+The interaction direction is inspired by [Moncy Yohannan's Portfolio Website](https://github.com/MoncyDev/Portfolio-Website). This project does not copy its source code, protected 3D assets, or complete experience. The orange visual system, responsive composition, and procedural character are original implementations using Ram Prakash Sah's content. Attribution also appears in the website footer.

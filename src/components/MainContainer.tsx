@@ -1,79 +1,116 @@
 import {
+  ArrowDown,
   ArrowRight,
   ArrowUp,
-  Briefcase,
+  ArrowUpRight,
   CheckCircle2,
   Code2,
-  Database,
   ExternalLink,
-  Gamepad2,
   Github,
   Linkedin,
   Mail,
   Menu,
-  Moon,
-  Search,
   Send,
-  Server,
   Sparkles,
-  Sun,
-  Wrench,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { digitalSkills, experiences, projects } from "../data/portfolio";
-import { useTheme } from "../hooks/useTheme";
 import { sendEmail } from "../services/emailService";
+import type { CharacterZone } from "./Character/ProceduralCharacter";
 
-const navItems = [
-  { id: "about", label: "Profile", index: "01" },
-  { id: "skills", label: "Skills", index: "02" },
-  { id: "experience", label: "Career", index: "03" },
-  { id: "work", label: "Work", index: "04" },
-  { id: "contact", label: "Contact", index: "05" },
+const ProceduralCharacter = lazy(() => import("./Character/ProceduralCharacter"));
+
+const navigation = [
+  { id: "about", label: "About" },
+  { id: "capabilities", label: "What I do" },
+  { id: "career", label: "Career" },
+  { id: "work", label: "Work" },
+  { id: "contact", label: "Contact" },
 ];
 
-const skillIcons = [Server, Code2, Database, Wrench, Gamepad2];
-const projectFilters = ["All", "Web", "Mobile", "Backend", "AI"];
-
-const filterProject = (filter: string, technologies: string[]) => {
-  if (filter === "All") return true;
-  const values = technologies.join(" ").toLowerCase();
-  if (filter === "Web") return /react|typescript|javascript|tailwind|html5/.test(values);
-  if (filter === "Mobile") return /kotlin|android|jetpack/.test(values);
-  if (filter === "Backend") return /java|spring|node|express|hibernate|blockchain/.test(values);
-  return /python|tensorflow|cnn|gemini/.test(values);
-};
+const services = [
+  {
+    title: "Backend engineering",
+    subtitle: "Reliable services and data workflows",
+    copy: "Secure REST APIs, Spring Boot applications, persistence layers, authentication, role-aware systems, and maintainable service boundaries.",
+    skills: ["Java", "Spring Boot", "REST APIs", "Hibernate/JPA", "PostgreSQL", "RBAC"],
+  },
+  {
+    title: "Frontend & product UI",
+    subtitle: "Responsive interfaces built around real tasks",
+    copy: "Typed React experiences, Angular applications, dashboards, design systems, and accessible interfaces that remain clear under real product complexity.",
+    skills: ["React", "TypeScript", "Angular", "Tailwind CSS", "Responsive UI", "Accessibility"],
+  },
+  {
+    title: "Interactive products",
+    subtitle: "Real-time, mobile, and playful systems",
+    copy: "Android shells, Canvas game engines, WebRTC communication, synchronized multiplayer, and interaction systems that make products feel alive.",
+    skills: ["Kotlin", "Jetpack Compose", "WebRTC", "Canvas", "Firebase", "Gamification"],
+  },
+];
 
 const MainContainer = () => {
-  const { isDark, toggleTheme } = useTheme();
+  const [activeZone, setActiveZone] = useState<CharacterZone>("hero");
   const [navOpen, setNavOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("top");
-  const [skillQuery, setSkillQuery] = useState("");
-  const [selectedSkill, setSelectedSkill] = useState("Java");
-  const [projectFilter, setProjectFilter] = useState("All");
-  const [motionOff, setMotionOff] = useState(
+  const [expandedService, setExpandedService] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [company, setCompany] = useState("");
   const [formState, setFormState] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const sections = ["top", ...navItems.map(({ id }) => id)]
-      .map((id) => document.getElementById(id))
-      .filter((section): section is HTMLElement => Boolean(section));
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => setReducedMotion(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    const sections = document.querySelectorAll<HTMLElement>("[data-character-zone]");
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible?.target.id) setActiveSection(visible.target.id);
+        const zone = visible?.target.getAttribute("data-character-zone") as CharacterZone | null;
+        if (zone) setActiveZone(zone);
       },
-      { rootMargin: "-25% 0px -60% 0px", threshold: [0, 0.2, 0.6] },
+      { rootMargin: "-30% 0px -45% 0px", threshold: [0, 0.15, 0.45] },
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const cursor = cursorRef.current;
+    if (!cursor || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let frame = 0;
+    let targetX = -100;
+    let targetY = -100;
+    const moveCursor = () => {
+      cursor.style.transform = `translate3d(${targetX}px, ${targetY}px, 0)`;
+      frame = 0;
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      targetX = event.clientX;
+      targetY = event.clientY;
+      if (!frame) frame = window.requestAnimationFrame(moveCursor);
+    };
+    const onPointerOver = (event: PointerEvent) => {
+      const target = event.target as HTMLElement;
+      cursor.classList.toggle("cursor-active", Boolean(target.closest("a, button, input, textarea, summary")));
+    };
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointerover", onPointerOver, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerover", onPointerOver);
+    };
   }, []);
 
   useEffect(() => {
@@ -83,24 +120,15 @@ const MainContainer = () => {
     };
   }, [navOpen]);
 
-  const filteredSkills = useMemo(
-    () =>
-      digitalSkills.map((group) => ({
-        ...group,
-        skills: group.skills.filter((skill) =>
-          skill.toLowerCase().includes(skillQuery.trim().toLowerCase()),
-        ),
-      })),
-    [skillQuery],
+  const techStack = useMemo(
+    () => [...new Set(digitalSkills.flatMap((group) => group.skills))].slice(0, 24),
+    [],
   );
 
-  const visibleProjects = projects.filter((project) =>
-    filterProject(projectFilter, project.technologies),
-  );
-
-  const selectedCategory =
-    digitalSkills.find((group) => group.skills.includes(selectedSkill))?.category ??
-    "Engineering";
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+    setNavOpen(false);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -114,412 +142,276 @@ const MainContainer = () => {
     if (sent) setFormData({ name: "", email: "", message: "" });
   };
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: motionOff ? "auto" : "smooth" });
-    setNavOpen(false);
-  };
-
   return (
-    <div className={`site-shell ${motionOff ? "motion-off" : ""}`}>
-      <a className="skip-link" href="#main-content">
+    <div className={`portfolio-shell ${reducedMotion ? "reduced-motion" : ""}`}>
+      <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      <div className="noise" aria-hidden="true" />
+      <div className="ambient-glow ambient-glow-one" aria-hidden="true" />
+      <div className="ambient-glow ambient-glow-two" aria-hidden="true" />
+      <div className="page-grain" aria-hidden="true" />
+      <div ref={cursorRef} className="custom-cursor" aria-hidden="true" />
 
-      <header className="hud-wrap">
-        <div className="hud">
-          <button className="brand" type="button" onClick={() => scrollTo("top")} aria-label="Go to top">
-            <span className="brand-mark" aria-hidden="true">
-              <span>RP</span>
-            </span>
-            <span>
-              <b>RAM PRAKASH</b>
-              <small>FULL-STACK SYSTEMS ENGINEER</small>
-            </span>
-          </button>
-
-          <nav className={`zone-nav ${navOpen ? "nav-open" : ""}`} aria-label="Primary navigation">
-            {navItems.map((item) => (
-              <button
-                type="button"
-                key={item.id}
-                className={activeSection === item.id ? "active" : ""}
-                onClick={() => scrollTo(item.id)}
-                aria-current={activeSection === item.id ? "location" : undefined}
-              >
-                <span>{item.index}</span>
-                <b>{item.label}</b>
-              </button>
-            ))}
-          </nav>
-
-          <div className="hud-actions">
-            <button
-              className="icon-btn"
-              type="button"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
-              title={`Switch to ${isDark ? "light" : "dark"} theme`}
-            >
-              {isDark ? <Sun /> : <Moon />}
-            </button>
-            <button
-              className="icon-btn desktop-control"
-              type="button"
-              onClick={() => setMotionOff((value) => !value)}
-              aria-pressed={motionOff}
-              aria-label={`${motionOff ? "Enable" : "Reduce"} motion`}
-              title={`${motionOff ? "Enable" : "Reduce"} motion`}
-            >
-              <Sparkles className={motionOff ? "muted-icon" : ""} />
-            </button>
-            <button
-              className="icon-btn menu-btn"
-              type="button"
-              aria-expanded={navOpen}
-              aria-controls="mobile-navigation"
-              aria-label={navOpen ? "Close navigation" : "Open navigation"}
-              onClick={() => setNavOpen((value) => !value)}
-            >
-              {navOpen ? <X /> : <Menu />}
-            </button>
+      <Suspense
+        fallback={
+          <div className="character-stage character-loading" aria-hidden="true">
+            <div className="character-fallback">
+              <span className="fallback-antenna" />
+              <span className="fallback-face">
+                <i />
+                <i />
+              </span>
+              <span className="fallback-body" />
+            </div>
           </div>
-        </div>
-        <div className="hud-status" aria-hidden="true">
-          <span>AVAILABLE FOR PRODUCT ENGINEERING</span>
-          <div>
-            <i style={{ width: `${((navItems.findIndex((item) => item.id === activeSection) + 1) / navItems.length) * 100}%` }} />
-          </div>
-          <span>KATHMANDU · NPT</span>
-        </div>
+        }
+      >
+        <ProceduralCharacter activeZone={activeZone} reducedMotion={reducedMotion} />
+      </Suspense>
+
+      <header className="site-header">
+        <button className="site-brand" type="button" onClick={() => scrollTo("home")} aria-label="Go home">
+          <span>RP</span>
+          <b>RAM PRAKASH</b>
+        </button>
+        <a
+          className="header-connect"
+          href="https://github.com/i-am-ramprakash"
+          target="_blank"
+          rel="noreferrer"
+        >
+          github.com/i-am-ramprakash <ArrowUpRight />
+          <span className="sr-only">(opens in a new tab)</span>
+        </a>
+        <nav className={`site-nav ${navOpen ? "nav-open" : ""}`} aria-label="Primary navigation">
+          {navigation.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={activeZone === (item.id === "capabilities" ? "capabilities" : item.id) ? "active" : ""}
+              onClick={() => scrollTo(item.id)}
+            >
+              <span>{item.label}</span>
+              <span aria-hidden="true">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+        <button
+          type="button"
+          className="menu-toggle"
+          onClick={() => setNavOpen((value) => !value)}
+          aria-expanded={navOpen}
+          aria-label={navOpen ? "Close navigation" : "Open navigation"}
+        >
+          {navOpen ? <X /> : <Menu />}
+        </button>
       </header>
 
-      <main id="main-content">
-        <section className="hero section-pad" id="top" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <p className="eyebrow">
-              <span className="live-dot" aria-hidden="true" />
-              BUILDING RELIABLE PRODUCTS ACROSS WEB, MOBILE & BACKEND
-            </p>
-            <p className="hero-code" aria-hidden="true">
-              &lt;engineer profile="full-stack" /&gt;
-            </p>
-            <h1 id="hero-title">
-              Systems that scale.
-              <br />
-              Experiences that <span>connect.</span>
-            </h1>
-            <p className="hero-role">JAVA · SPRING BOOT · REACT · TYPESCRIPT · INTERACTIVE PRODUCTS</p>
-            <p className="hero-lead">
-              I’m Ram Prakash, a full-stack systems engineer turning complex workflows into secure,
-              responsive products—from enterprise services to real-time consumer experiences.
-            </p>
-            <div className="hero-cta">
-              <button className="primary-btn" type="button" onClick={() => scrollTo("work")}>
-                Explore selected work <ArrowRight />
-              </button>
-              <button className="secondary-btn" type="button" onClick={() => scrollTo("contact")}>
-                Start a conversation <Mail />
-              </button>
-            </div>
-            <div className="hero-links" aria-label="Professional profiles">
-              <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer">
-                <Github /> GitHub <span className="sr-only">(opens in a new tab)</span>
-              </a>
-              <a
-                href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Linkedin /> LinkedIn <span className="sr-only">(opens in a new tab)</span>
-              </a>
-            </div>
-          </div>
+      <aside className="social-rail" aria-label="Social profiles">
+        <span>CONNECT</span>
+        <i aria-hidden="true" />
+        <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer" aria-label="GitHub">
+          <Github />
+        </a>
+        <a
+          href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="LinkedIn"
+        >
+          <Linkedin />
+        </a>
+      </aside>
 
-          <div className="hero-world" aria-hidden="true">
-            <div className="world-grid" />
-            <div className="orbit orbit-one">
-              <i>BACKEND</i>
-              <i>PRODUCT</i>
-            </div>
-            <div className="orbit orbit-two">
-              <i>WEB</i>
-              <i>MOBILE</i>
-            </div>
-            <div className="core">
-              <span>RP</span>
-              <small>ENGINEERING</small>
-            </div>
-            <div className="world-panel panel-top">
-              <span>PRIMARY STACK</span>
-              <b>Java + React</b>
-            </div>
-            <div className="world-panel panel-bottom">
-              <span>CURRENT FOCUS</span>
-              <b>Product systems</b>
-            </div>
-            <span className="coordinate">27.7172° N · 85.3240° E</span>
+      <main id="main-content">
+        <section id="home" className="landing-section" data-character-zone="hero" aria-labelledby="hero-title">
+          <div className="landing-copy landing-name">
+            <p className="section-label">HELLO! I&apos;M</p>
+            <h1 id="hero-title">
+              RAM
+              <br />
+              <span>PRAKASH</span>
+            </h1>
           </div>
+          <div className="landing-copy landing-role">
+            <p>A CREATIVE</p>
+            <h2>
+              <span>DEVELOPER</span>
+              <br />& ENGINEER
+            </h2>
+            <div className="hero-actions">
+              <button type="button" onClick={() => scrollTo("work")}>
+                View my work <ArrowRight />
+              </button>
+              <button type="button" onClick={() => scrollTo("contact")}>
+                Contact me <Mail />
+              </button>
+            </div>
+          </div>
+          <button className="scroll-cue" type="button" onClick={() => scrollTo("about")}>
+            <span>SCROLL TO EXPLORE</span>
+            <ArrowDown />
+          </button>
         </section>
 
-        <section className="section-pad content-section" id="about" aria-labelledby="about-title">
-          <p className="section-kicker">
-            <span>01</span> PROFILE / OPERATING PRINCIPLES
-          </p>
-          <div className="section-heading">
-            <div>
-              <h2 id="about-title">
-                Engineering with <em>range.</em>
-              </h2>
-              <p>
-                Enterprise foundations, product thinking, and a bias toward clear, dependable
-                experiences.
-              </p>
-            </div>
-          </div>
-          <div className="profile-grid">
-            <article className="profile-card profile-bio">
-              <div className="profile-id">
-                <span aria-hidden="true">RP</span>
-                <div>
-                  <b>Ram Prakash Sah</b>
-                  <small>FULL-STACK & SYSTEMS ENGINEER</small>
-                </div>
-              </div>
-              <p>
-                I build high-performance web applications, Spring Boot services, multi-vendor
-                platforms, Android experiences, and secure real-time systems. My background at TCS
-                and Mentor Friends combines enterprise discipline with hands-on product delivery.
-              </p>
-            </article>
-            <div className="profile-stats" aria-label="Profile highlights">
+        <section id="about" className="about-section page-section" data-character-zone="about" aria-labelledby="about-title">
+          <div className="section-number">01 / ABOUT</div>
+          <div className="about-card reveal-card">
+            <p className="eyebrow">FULL-STACK · SYSTEMS · PRODUCT</p>
+            <h2 id="about-title">
+              I turn complex systems into <span>clear products.</span>
+            </h2>
+            <p>
+              I’m Ram Prakash Sah, a full-stack systems engineer with experience across enterprise
+              banking software, multi-vendor platforms, Android products, real-time communication,
+              and interactive applications.
+            </p>
+            <p>
+              My work connects robust Java and Spring Boot foundations with thoughtful React and
+              TypeScript interfaces—because reliable engineering and good experience design belong
+              together.
+            </p>
+            <div className="about-facts">
               <div>
-                <span>EXPERIENCE</span>
-                <b>Enterprise + product teams</b>
-              </div>
-              <div>
-                <span>DELIVERY</span>
-                <b>Backend to interface</b>
-              </div>
-              <div>
-                <span>LOCATION</span>
+                <span>BASED IN</span>
                 <b>Kathmandu, Nepal</b>
               </div>
               <div>
-                <span>STATUS</span>
-                <b>Open to conversations</b>
+                <span>CURRENTLY</span>
+                <b>Full-Stack Developer</b>
+              </div>
+              <div>
+                <span>FOCUS</span>
+                <b>Product engineering</b>
               </div>
             </div>
-            {[
-              [Server, "Reliable systems", "Maintainable services, clear boundaries, and secure data workflows."],
-              [Code2, "Product interfaces", "Responsive experiences designed around real user tasks."],
-              [Sparkles, "Interactive craft", "Motion and feedback used with purpose and restraint."],
-              [Wrench, "End-to-end ownership", "From requirements and architecture through QA and delivery."],
-            ].map(([Icon, title, description]) => {
-              const PillarIcon = Icon as typeof Server;
+          </div>
+        </section>
+
+        <section
+          id="capabilities"
+          className="capabilities-section page-section"
+          data-character-zone="capabilities"
+          aria-labelledby="capabilities-title"
+        >
+          <div className="section-number">02 / CAPABILITIES</div>
+          <div className="capabilities-heading">
+            <p>WHAT</p>
+            <h2 id="capabilities-title">
+              I <span>DO</span>
+            </h2>
+          </div>
+          <div className="service-stack">
+            {services.map((service, index) => {
+              const expanded = expandedService === index;
               return (
-                <article className="profile-pillar" key={title as string}>
-                  <PillarIcon aria-hidden="true" />
-                  <h3>{title as string}</h3>
-                  <p>{description as string}</p>
+                <article className={`service-card ${expanded ? "expanded" : ""}`} key={service.title}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedService(index)}
+                    aria-expanded={expanded}
+                    aria-controls={`service-panel-${index}`}
+                  >
+                    <span className="service-index">0{index + 1}</span>
+                    <span>
+                      <b>{service.title}</b>
+                      <small>{service.subtitle}</small>
+                    </span>
+                    <span className="service-plus" aria-hidden="true">
+                      {expanded ? "—" : "+"}
+                    </span>
+                  </button>
+                  <div id={`service-panel-${index}`} className="service-panel">
+                    <p>{service.copy}</p>
+                    <div>
+                      {service.skills.map((skill) => (
+                        <span key={skill}>{skill}</span>
+                      ))}
+                    </div>
+                  </div>
                 </article>
               );
             })}
           </div>
         </section>
 
-        <section className="section-pad content-section" id="skills" aria-labelledby="skills-title">
-          <p className="section-kicker">
-            <span>02</span> CAPABILITIES / TECHNICAL MATRIX
-          </p>
-          <div className="section-heading">
-            <div>
-              <h2 id="skills-title">
-                A practical <em>toolkit.</em>
-              </h2>
-              <p>Search or explore the technologies I use to move products from idea to delivery.</p>
-            </div>
-          </div>
-          <label className="skill-search">
-            <Search aria-hidden="true" />
-            <span className="sr-only">Search skills</span>
-            <input
-              type="search"
-              value={skillQuery}
-              onChange={(event) => setSkillQuery(event.target.value)}
-              placeholder="Search Java, React, WebRTC..."
-            />
-            {skillQuery && (
-              <button type="button" onClick={() => setSkillQuery("")} aria-label="Clear skill search">
-                <X />
-              </button>
-            )}
-          </label>
-          <div className="skill-tree">
-            {filteredSkills.map((group, index) => {
-              const BranchIcon = skillIcons[index] ?? Code2;
-              if (group.skills.length === 0) return null;
-              return (
-                <article className="skill-branch" key={group.category}>
-                  <header>
-                    <span>
-                      <BranchIcon aria-hidden="true" />
-                    </span>
-                    <div>
-                      <small>BRANCH {String(index + 1).padStart(2, "0")}</small>
-                      <h3>{group.category}</h3>
-                    </div>
-                  </header>
-                  <div className="skill-nodes">
-                    {group.skills.map((skill) => (
-                      <button
-                        type="button"
-                        key={skill}
-                        className={selectedSkill === skill ? "active" : ""}
-                        aria-pressed={selectedSkill === skill}
-                        onClick={() => setSelectedSkill(skill)}
-                      >
-                        <i aria-hidden="true" />
-                        {skill}
-                      </button>
+        <section id="career" className="career-section page-section" data-character-zone="career" aria-labelledby="career-title">
+          <div className="section-number">03 / EXPERIENCE</div>
+          <header className="career-heading">
+            <p>MY CAREER &</p>
+            <h2 id="career-title">EXPERIENCE</h2>
+          </header>
+          <div className="career-list">
+            {[...experiences].reverse().map((experience, index) => (
+              <article className="career-entry" key={experience.id}>
+                <span className="career-count">0{index + 1}</span>
+                <div className="career-role">
+                  <span>{experience.period}</span>
+                  <h3>{experience.title}</h3>
+                  <b>{experience.company}</b>
+                  <small>{experience.location}</small>
+                </div>
+                <div className="career-description">
+                  <p>{experience.objective}</p>
+                  <ul>
+                    {experience.responsibilities.slice(0, 3).map((responsibility) => (
+                      <li key={responsibility}>{responsibility}</li>
+                    ))}
+                  </ul>
+                  <div className="tag-list">
+                    {experience.technologies.map((technology) => (
+                      <span key={technology}>{technology}</span>
                     ))}
                   </div>
-                </article>
-              );
-            })}
-          </div>
-          <div className="skill-detail" aria-live="polite">
-            <span>SELECTED NODE</span>
-            <b>{selectedSkill}</b>
-            <p>{selectedCategory} capability used in production-oriented product work.</p>
-          </div>
-        </section>
-
-        <section className="section-pad content-section" id="experience" aria-labelledby="experience-title">
-          <p className="section-kicker">
-            <span>03</span> CAREER / MISSION LOG
-          </p>
-          <div className="section-heading">
-            <div>
-              <h2 id="experience-title">
-                Experience in <em>motion.</em>
-              </h2>
-              <p>Current-first chronology, focused on ownership and delivered capabilities.</p>
-            </div>
-          </div>
-          <div className="mission-line">
-            {[...experiences].reverse().map((experience, index) => (
-              <article className="mission-card" key={experience.id}>
-                <div className="mission-index">
-                  <span>MISSION {String(index + 1).padStart(2, "0")}</span>
-                  <i>{index === 0 ? "CURRENT" : "COMPLETED"}</i>
-                </div>
-                <div className="mission-heading">
-                  <span className="mission-icon">
-                    <Briefcase aria-hidden="true" />
-                  </span>
-                  <div>
-                    <h3>{experience.title}</h3>
-                    <b>{experience.company}</b>
-                    <small>
-                      {experience.location} · {experience.period}
-                    </small>
-                  </div>
-                </div>
-                <div className="mission-objective">
-                  <span>OBJECTIVE</span>
-                  <p>{experience.objective}</p>
-                </div>
-                <ul>
-                  {experience.responsibilities.slice(0, 3).map((responsibility) => (
-                    <li key={responsibility}>{responsibility}</li>
-                  ))}
-                </ul>
-                <div className="tags">
-                  {experience.technologies.map((technology) => (
-                    <span key={technology}>{technology}</span>
-                  ))}
                 </div>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="section-pad content-section" id="work" aria-labelledby="work-title">
-          <p className="section-kicker">
-            <span>04</span> SELECTED WORK / PRODUCT WORLDS
-          </p>
-          <div className="section-heading project-heading">
-            <div>
-              <h2 id="work-title">
-                Built across <em>domains.</em>
-              </h2>
-              <p>Selected products with the challenge, architecture, role, and outcome made visible.</p>
-            </div>
-            <div className="world-count" aria-label={`${projects.length} selected projects`}>
-              <b>{projects.length}</b>
-              <span>
-                SELECTED
-                <br />
-                PROJECTS
-              </span>
-            </div>
-          </div>
-          <div className="filter-bar" aria-label="Filter projects">
-            {projectFilters.map((filter) => (
-              <button
-                type="button"
-                key={filter}
-                className={projectFilter === filter ? "active" : ""}
-                aria-pressed={projectFilter === filter}
-                onClick={() => setProjectFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-          <div className="world-grid-list">
-            {visibleProjects.map((project, index) => (
-              <article className="world-card" key={project.id}>
+        <section id="work" className="work-section page-section" data-character-zone="work" aria-labelledby="work-title">
+          <div className="section-number">04 / SELECTED WORK</div>
+          <header className="work-heading">
+            <p>A SELECTION OF</p>
+            <h2 id="work-title">
+              THINGS I&apos;VE <span>BUILT</span>
+            </h2>
+          </header>
+          <div className="project-list">
+            {projects.map((project, index) => (
+              <article className="project-card" key={project.id}>
                 <a
-                  className="world-visual"
+                  className="project-image"
                   href={project.link}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`View ${project.title} source code (opens in a new tab)`}
+                  aria-label={`Open ${project.title} repository in a new tab`}
                 >
                   <img
                     src={project.image}
                     alt=""
                     width="1200"
-                    height="675"
+                    height="800"
                     loading="lazy"
                     decoding="async"
                   />
-                  <span className="world-number">WORLD {String(index + 1).padStart(2, "0")}</span>
-                  <span className="world-open">
-                    VIEW SOURCE <ExternalLink />
-                  </span>
+                  <span>VIEW PROJECT</span>
+                  <ArrowUpRight />
                 </a>
-                <div className="world-info">
-                  <span className="world-status">
-                    <i aria-hidden="true" />
-                    {project.status}
-                  </span>
+                <div className="project-copy">
+                  <div className="project-meta">
+                    <span>0{index + 1}</span>
+                    <small>{project.status}</small>
+                  </div>
                   <h3>{project.title}</h3>
                   <p>{project.description}</p>
-                  <div className="world-outcome">
+                  <div className="project-outcome">
                     <span>OUTCOME</span>
-                    {project.outcome}
+                    <p>{project.outcome}</p>
                   </div>
-                  <div className="tags">
-                    {project.technologies.map((technology) => (
-                      <span key={technology}>{technology}</span>
-                    ))}
-                  </div>
-                  <details className="project-details">
-                    <summary>Explore case study</summary>
-                    <div className="case-grid">
+                  <details>
+                    <summary>Case study details</summary>
+                    <div className="project-detail-grid">
                       <div>
                         <span>ROLE</span>
                         <p>{project.role}</p>
@@ -528,195 +420,152 @@ const MainContainer = () => {
                         <span>CHALLENGE</span>
                         <p>{project.challenge}</p>
                       </div>
-                      <div className="wide">
+                      <div>
                         <span>ARCHITECTURE</span>
                         <p>{project.architecture}</p>
                       </div>
                     </div>
-                    <ul className="feature-list">
+                    <ul>
                       {project.features.map((feature) => (
                         <li key={feature}>
-                          <CheckCircle2 aria-hidden="true" /> {feature}
+                          <CheckCircle2 /> {feature}
                         </li>
                       ))}
                     </ul>
                   </details>
-                  <div className="project-actions">
-                    <a href={project.link} target="_blank" rel="noreferrer">
-                      View repository <ExternalLink />
-                      <span className="sr-only">(opens in a new tab)</span>
-                    </a>
+                  <div className="tag-list">
+                    {project.technologies.map((technology) => (
+                      <span key={technology}>{technology}</span>
+                    ))}
                   </div>
+                  <a className="project-link" href={project.link} target="_blank" rel="noreferrer">
+                    View repository <ExternalLink />
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </a>
                 </div>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="section-pad quest" aria-labelledby="quest-title">
-          <div className="quest-panel">
+        <section className="tech-section" aria-labelledby="tech-title">
+          <div className="section-number">05 / TOOLKIT</div>
+          <h2 id="tech-title">
+            TECHNOLOGIES I USE TO <span>SHIP</span>
+          </h2>
+          <div className="tech-marquee" aria-label={techStack.join(", ")}>
             <div>
-              <span>NEXT MISSION</span>
-              <h2 id="quest-title">
-                Have a complex product problem? <em>Let’s map it.</em>
-              </h2>
+              {[...techStack, ...techStack].map((technology, index) => (
+                <span key={`${technology}-${index}`}>
+                  <Code2 /> {technology}
+                </span>
+              ))}
             </div>
-            <p>
-              I’m interested in full-stack and product-engineering work where sound systems thinking
-              and thoughtful UX both matter.
-            </p>
           </div>
         </section>
 
-        <section className="section-pad contact-section" id="contact" aria-labelledby="contact-title">
-          <div className="contact-grid">
-            <div className="contact-copy">
-              <p className="portal-signal">
-                <i aria-hidden="true" /> COMMUNICATION PORTAL ONLINE
-              </p>
-              <h2 id="contact-title">
-                Start a <em>conversation.</em>
-              </h2>
-              <p>
-                Share the product, role, or problem you have in mind. I’ll reply through the email
-                address you provide.
-              </p>
-              <div className="contact-direct">
-                <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer">
-                  <Github />
-                  <span>
-                    <small>CODE & PROJECTS</small>
-                    github.com/i-am-ramprakash
-                  </span>
-                  <span className="sr-only">(opens in a new tab)</span>
-                </a>
-                <a
-                  href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Linkedin /> LinkedIn
-                  <span className="sr-only">(opens in a new tab)</span>
-                </a>
-              </div>
+        <section id="contact" className="contact-section page-section" data-character-zone="contact" aria-labelledby="contact-title">
+          <div className="section-number">06 / CONTACT</div>
+          <div className="contact-intro">
+            <p>HAVE A PROJECT, ROLE, OR IDEA?</p>
+            <h2 id="contact-title">
+              LET&apos;S MAKE
+              <br />
+              SOMETHING <span>WORK.</span>
+            </h2>
+            <div className="contact-links">
+              <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer">
+                <Github /> GitHub <ArrowUpRight />
+              </a>
+              <a
+                href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Linkedin /> LinkedIn <ArrowUpRight />
+              </a>
             </div>
-
-            <form className="contact-form" onSubmit={handleSubmit}>
-              <div className="form-head">
-                <span>SECURE MESSAGE FORM</span>
-                <i>RESPONSE VIA EMAIL</i>
-              </div>
-              <input
-                className="honeypot"
-                type="text"
-                name="company"
-                value={company}
-                onChange={(event) => setCompany(event.target.value)}
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-              />
-              <fieldset>
-                <legend>QUICK START</legend>
-                <div className="preset-chips">
-                  {["Discuss a role", "Build a product", "Collaborate on a project"].map((preset) => (
-                    <button
-                      type="button"
-                      key={preset}
-                      onClick={() =>
-                        setFormData((current) => ({
-                          ...current,
-                          message: `${preset}: `,
-                        }))
-                      }
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              <label>
-                <span>YOUR NAME</span>
-                <input
-                  required
-                  autoComplete="name"
-                  value={formData.name}
-                  onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                />
-              </label>
-              <label>
-                <span>EMAIL ADDRESS</span>
-                <input
-                  required
-                  type="email"
-                  autoComplete="email"
-                  value={formData.email}
-                  onChange={(event) => setFormData({ ...formData, email: event.target.value })}
-                />
-              </label>
-              <label>
-                <span>
-                  MESSAGE <i>{formData.message.length}/1000</i>
-                </span>
-                <textarea
-                  required
-                  rows={6}
-                  minLength={20}
-                  maxLength={1000}
-                  value={formData.message}
-                  onChange={(event) => setFormData({ ...formData, message: event.target.value })}
-                />
-              </label>
-              <button className="primary-btn" type="submit" disabled={formState === "sending"}>
-                {formState === "sending" ? "Sending…" : "Send message"} <Send />
-              </button>
-              <div className="form-feedback" aria-live="polite">
-                {formState === "success" && (
-                  <p className="success">
-                    <CheckCircle2 /> Message sent. Thank you—I’ll be in touch.
-                  </p>
-                )}
-                {formState === "error" && (
-                  <p className="error">
-                    Message could not be sent. Please try again or connect on LinkedIn.
-                  </p>
-                )}
-              </div>
-            </form>
           </div>
+          <form className="contact-form" onSubmit={handleSubmit}>
+            <div className="form-title">
+              <Sparkles />
+              <span>
+                <b>Send a message</b>
+                <small>I’ll reply to the email you provide.</small>
+              </span>
+            </div>
+            <input
+              className="honeypot"
+              type="text"
+              value={company}
+              onChange={(event) => setCompany(event.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+            <label>
+              <span>Your name</span>
+              <input
+                required
+                autoComplete="name"
+                value={formData.name}
+                onChange={(event) => setFormData({ ...formData, name: event.target.value })}
+                placeholder="How should I address you?"
+              />
+            </label>
+            <label>
+              <span>Email address</span>
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                value={formData.email}
+                onChange={(event) => setFormData({ ...formData, email: event.target.value })}
+                placeholder="you@example.com"
+              />
+            </label>
+            <label>
+              <span>
+                Message <i>{formData.message.length}/1000</i>
+              </span>
+              <textarea
+                required
+                minLength={20}
+                maxLength={1000}
+                rows={6}
+                value={formData.message}
+                onChange={(event) => setFormData({ ...formData, message: event.target.value })}
+                placeholder="Tell me about the opportunity or problem..."
+              />
+            </label>
+            <button type="submit" disabled={formState === "sending"}>
+              {formState === "sending" ? "Sending…" : "Send message"} <Send />
+            </button>
+            <div className="form-feedback" aria-live="polite">
+              {formState === "success" && <p className="success">Message sent. Thank you.</p>}
+              {formState === "error" && (
+                <p className="error">The message could not be sent. Please try LinkedIn instead.</p>
+              )}
+            </div>
+          </form>
         </section>
       </main>
 
-      <footer>
-        <div className="footer-brand">
-          <b>
-            RAM PRAKASH <span>SAH</span>
-          </b>
-          <p>Full-stack systems engineer</p>
+      <footer className="site-footer">
+        <div>
+          <b>RAM PRAKASH SAH</b>
+          <span>FULL-STACK SYSTEMS ENGINEER</span>
         </div>
-        <div className="footer-progress" aria-hidden="true">
-          <span>BUILD</span>
-          <div>
-            <i style={{ width: "100%" }} />
-          </div>
-          <span>STABLE</span>
-        </div>
-        <div className="footer-links">
-          <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer">
-            <Github /> GitHub
+        <p>
+          Original implementation by Ram Prakash Sah. Interaction direction inspired by{" "}
+          <a href="https://github.com/MoncyDev/Portfolio-Website" target="_blank" rel="noreferrer">
+            Moncy Yohannan
           </a>
-          <a
-            href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Linkedin /> LinkedIn
-          </a>
-        </div>
-        <button className="back-top" type="button" onClick={() => scrollTo("top")}>
+          .
+        </p>
+        <button type="button" onClick={() => scrollTo("home")}>
           Back to top <ArrowUp />
         </button>
-        <small>© {new Date().getFullYear()} Ram Prakash Sah. Designed and built with intent.</small>
       </footer>
     </div>
   );
