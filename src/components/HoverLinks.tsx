@@ -1,13 +1,5 @@
-import "./styles/style.css";
-
-const HoverLinks = ({ text, cursor }: { text: string; cursor?: boolean }) => {
-  return (
-    <div className="hover-link" data-cursor={!cursor ? "disable" : undefined}>
-      <div className="hover-in">
-        {text} <div>{text}</div>
-      </div>
-    </div>
-  );
+const HoverLinks = ({ text }: { text: string; cursor?: boolean }) => {
+  return <span className="nav-link-text">{text}</span>;
 };
 
 export default HoverLinks;
