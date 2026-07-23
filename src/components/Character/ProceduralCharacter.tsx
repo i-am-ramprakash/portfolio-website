@@ -13,6 +13,8 @@ type CharacterZone =
 interface ProceduralCharacterProps {
   activeZone: CharacterZone;
   reducedMotion: boolean;
+  motionPaused: boolean;
+  celebrationSignal: number;
 }
 
 type Pose = { x: number; y: number; scale: number; rotation: number };
@@ -54,10 +56,17 @@ const sectionGaze: Record<CharacterZone, { x: number; y: number }> = {
   contact: { x: 0.18, y: -0.02 },
 };
 
-const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterProps) => {
+const ProceduralCharacter = ({
+  activeZone,
+  reducedMotion,
+  motionPaused,
+  celebrationSignal,
+}: ProceduralCharacterProps) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef(activeZone);
   const reducedMotionRef = useRef(reducedMotion);
+  const motionPausedRef = useRef(motionPaused);
+  const celebrationTimeRef = useRef(Number.NEGATIVE_INFINITY);
   const zoneEntryTimeRef = useRef(performance.now());
   const transitionPhaseRef = useRef<"gesture" | "neutral" | "traveling">("gesture");
   const [webglUnavailable, setWebglUnavailable] = useState(false);
@@ -73,6 +82,14 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
   }, [reducedMotion]);
 
   useEffect(() => {
+    motionPausedRef.current = motionPaused;
+  }, [motionPaused]);
+
+  useEffect(() => {
+    if (celebrationSignal > 0) celebrationTimeRef.current = performance.now();
+  }, [celebrationSignal]);
+
+  useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
@@ -82,6 +99,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     const processorCount = navigator.hardwareConcurrency || 4;
     let qualityLevel: QualityLevel =
       deviceMemory >= 8 && processorCount >= 8 ? 2 : deviceMemory >= 4 ? 1 : 0;
+    if (window.innerWidth < 900 && qualityLevel === 2) qualityLevel = 1;
     const qualityDpr = [1, 1.15, 1.5] as const;
 
     let renderer: THREE.WebGLRenderer;
@@ -115,26 +133,26 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
 
     // Dark charcoal armor matching og-image-orange.jpg — faceted dark panels with silver metallic sheen on edges
     const armor = new THREE.MeshStandardMaterial({
-      color: 0x1c2025,
-      metalness: 0.92,
-      roughness: 0.22,
+      color: 0x929ba4,
+      metalness: 0.78,
+      roughness: 0.3,
       envMapIntensity: 1.2,
     });
     const armorDark = new THREE.MeshStandardMaterial({
-      color: 0x0a0c0e,
-      metalness: 0.9,
-      roughness: 0.35,
+      color: 0x252b31,
+      metalness: 0.76,
+      roughness: 0.38,
     });
     const armorMid = new THREE.MeshStandardMaterial({
-      color: 0x22272d,
-      metalness: 0.88,
-      roughness: 0.25,
+      color: 0x5f6973,
+      metalness: 0.74,
+      roughness: 0.32,
     });
     // Silver-tinted edge highlight — catches the orange rim as white-silver specular
     const armorEdge = new THREE.MeshStandardMaterial({
-      color: 0x8a9299,
-      metalness: 0.98,
-      roughness: 0.08,
+      color: 0xd7dde2,
+      metalness: 0.86,
+      roughness: 0.16,
     });
     const jointMaterial = new THREE.MeshStandardMaterial({
       color: 0x070809,
@@ -648,7 +666,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
           : zone === "toolkit"
             ? viewportHeight * 0.34
             : 0;
-      const safeTop = Math.max(navbarSafeBottom + 24, sectionSafeTop);
+      const safeTop = Math.max(navbarSafeBottom + 60, sectionSafeTop);
       const safeBottom = viewportHeight - 32;
       const worldHeight =
         2 *
@@ -712,6 +730,12 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     );
     root.scale.setScalar(initialScale);
     root.rotation.y = initialPose.rotation;
+    const rootMotion = {
+      x: { value: 0 },
+      y: { value: 0 },
+      scale: { value: 0 },
+      rotation: { value: 0 },
+    };
 
     const pointerTarget = new THREE.Vector2();
     const pointer = new THREE.Vector2();
@@ -835,11 +859,44 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       s.pos = THREE.MathUtils.clamp(s.pos, -maxPosition, maxPosition);
       return s.pos;
     };
+    type SmoothVelocity = { value: number };
+    const smoothDampValue = (
+      current: number,
+      target: number,
+      velocity: SmoothVelocity,
+      smoothTime: number,
+      dt: number,
+      maxSpeed: number,
+    ) => {
+      const safeTime = Math.max(0.0001, smoothTime);
+      const omega = 2 / safeTime;
+      const step = omega * dt;
+      const decay = 1 / (1 + step + 0.48 * step * step + 0.235 * step * step * step);
+      const maximumChange = maxSpeed * safeTime;
+      const change = THREE.MathUtils.clamp(
+        current - target,
+        -maximumChange,
+        maximumChange,
+      );
+      const adjustedTarget = current - change;
+      const temporary = (velocity.value + omega * change) * dt;
+      velocity.value = (velocity.value - omega * temporary) * decay;
+      const output = adjustedTarget + (change + temporary) * decay;
+      if ((target - current > 0) === (output > target)) {
+        velocity.value = 0;
+        return target;
+      }
+      return output;
+    };
     // Apply an impulse (velocity kick) to a spring
     const kick = (s: Sp, impulse: number) => { s.vel += impulse; };
     // ─────────────────────────────────────────────────────────────────────────
 
     const onPointerMove = (event: PointerEvent) => {
+      if (
+        window.innerWidth < 900 ||
+        !window.matchMedia("(hover: hover) and (pointer: fine)").matches
+      ) return;
       const nx = (event.clientX / window.innerWidth) * 2 - 1;
       const ny = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -888,9 +945,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     renderer.domElement.addEventListener("webglcontextlost", onContextLost);
 
     let previousZone = zoneRef.current;
-    let transitionStartX = root.position.x;
-    let transitionStartY = root.position.y;
-    let transitionStartScale = root.scale.x;
+    let lastRenderedAt = 0;
     const clock = new THREE.Clock();
     const render = () => {
       if (document.hidden) {
@@ -900,6 +955,15 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       isRendering = true;
       animationFrame = window.requestAnimationFrame(render);
 
+      const frameNow = performance.now();
+      const frameInterval =
+        reducedMotionRef.current || motionPausedRef.current
+          ? 1000 / 12
+          : window.innerWidth < 900
+            ? 1000 / 30
+            : 0;
+      if (frameInterval && frameNow - lastRenderedAt < frameInterval) return;
+      lastRenderedAt = frameNow;
       const delta = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
       if (elapsed > 2) {
@@ -926,15 +990,15 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const targetX = getTargetX(zone, fallbackX, targetScale);
       const targetY = fittedFrame.y + basePose.y;
 
-      const motion = !reducedMotionRef.current;
+      const motion = !reducedMotionRef.current && !motionPausedRef.current;
       const now = performance.now();
       const timeSinceEntry = now - zoneEntryTimeRef.current;
+      const timeSinceCelebration = now - celebrationTimeRef.current;
       let phase = transitionPhaseRef.current;
       if (zone !== previousZone) {
-        transitionStartX = root.position.x;
-        transitionStartY = root.position.y;
-        transitionStartScale = root.scale.x;
         previousZone = zone;
+        phase = "traveling";
+        transitionPhaseRef.current = phase;
       }
       if (!motion) {
         scrollVelocity = 0;
@@ -944,10 +1008,10 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         });
         phase = "gesture";
         transitionPhaseRef.current = phase;
-      } else if (phase === "neutral" && timeSinceEntry >= 60) {
+      } else if (phase === "neutral") {
         phase = "traveling";
         transitionPhaseRef.current = phase;
-      } else if (phase === "traveling" && timeSinceEntry >= 500) {
+      } else if (phase === "traveling" && timeSinceEntry >= 850) {
         phase = "gesture";
         transitionPhaseRef.current = phase;
       }
@@ -960,40 +1024,49 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         root.position.x = targetX;
         root.position.y = targetY;
         root.scale.setScalar(targetScale);
-      } else if (phase === "neutral") {
-        root.position.x = transitionStartX;
-        root.position.y = transitionStartY;
-        root.scale.setScalar(transitionStartScale);
-      } else if (phase === "traveling") {
-        const progress = THREE.MathUtils.clamp((timeSinceEntry - 60) / 440, 0, 1);
-        const easedProgress = 1 - Math.pow(1 - progress, 3);
-        root.position.x = THREE.MathUtils.lerp(transitionStartX, targetX, easedProgress);
-        root.position.y = THREE.MathUtils.lerp(
-          transitionStartY,
-          targetY + idle,
-          easedProgress,
-        );
-        root.scale.setScalar(
-          THREE.MathUtils.lerp(transitionStartScale, targetScale, easedProgress),
-        );
+        rootMotion.x.value = 0;
+        rootMotion.y.value = 0;
+        rootMotion.scale.value = 0;
+        rootMotion.rotation.value = 0;
       } else {
-        root.position.x = THREE.MathUtils.damp(root.position.x, targetX, 3.1, delta);
-        root.position.y = THREE.MathUtils.damp(
+        root.position.x = smoothDampValue(
+          root.position.x,
+          targetX,
+          rootMotion.x,
+          0.38,
+          delta,
+          14,
+        );
+        root.position.y = smoothDampValue(
           root.position.y,
           targetY + idle,
-          3.1,
+          rootMotion.y,
+          0.42,
           delta,
+          12,
         );
         root.scale.setScalar(
-          THREE.MathUtils.damp(root.scale.x, targetScale, 3.2, delta),
+          smoothDampValue(
+            root.scale.x,
+            targetScale,
+            rootMotion.scale,
+            0.46,
+            delta,
+            1.8,
+          ),
         );
       }
       const torsoSpring = springClamped(sp.torso, 0, 14, 7.5, delta, 0.3, 1.5);
-      root.rotation.y = THREE.MathUtils.damp(
-        root.rotation.y,
-        basePose.rotation + scrollVelocity + torsoSpring * 0.18,
-        3.5, delta,
-      );
+      root.rotation.y = motion
+        ? smoothDampValue(
+            root.rotation.y,
+            basePose.rotation + scrollVelocity + torsoSpring * 0.18,
+            rootMotion.rotation,
+            0.34,
+            delta,
+            1.2,
+          )
+        : basePose.rotation;
       // Torso breathe + spring sway
       torso.scale.set(1 + breathe, 1 + breathe, 1 + breathe);
       torso.rotation.y = motion ? Math.sin(elapsed * 0.82) * 0.018 : 0;
@@ -1088,41 +1161,63 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       let leftWristTarget = 0, rightWristTarget = 0;
       let armDepth = motion ? Math.sin(elapsed * 0.7) * 0.018 : 0;
 
+      const gestureDuration: Record<CharacterZone, number> = {
+        hero: 4100,
+        about: 2700,
+        capabilities: 2500,
+        career: 2400,
+        work: 2700,
+        toolkit: 2700,
+        contact: 3400,
+      };
+      const gestureActive =
+        motion && phase === "gesture" && timeSinceEntry < gestureDuration[zone];
+      const heroWaveTime = timeSinceEntry;
       const heroGreeting =
-        zone === "hero" && motion && timeSinceEntry >= 250 && timeSinceEntry < 3500;
+        zone === "hero" && gestureActive && heroWaveTime >= 250 && heroWaveTime < 3600;
+      const celebrationWaveActive =
+        zone === "contact" && motion && timeSinceCelebration >= 0 && timeSinceCelebration < 2800;
       const contactWaveActive =
-        zone === "contact" && motion && timeSinceEntry > 350;
+        zone === "contact" &&
+        ((gestureActive && timeSinceEntry > 350) || celebrationWaveActive);
       if (heroGreeting) {
-        rightShoulderTarget = 1.68; rightElbowTarget = 1.05;
-        rightWristTarget = Math.sin((timeSinceEntry - 250) * 0.012) * 0.19;
+        const wave = Math.sin((heroWaveTime - 250) * 0.014);
+        rightShoulderTarget = 1.68;
+        rightElbowTarget = 1.05 + wave * 0.07;
+        rightWristTarget = wave * 0.22;
         armDepth = -0.14;
-      } else if (zone === "about") {
+      } else if (zone === "about" && gestureActive) {
         leftShoulderTarget = -1.08; leftElbowTarget = 0.48;
         leftWristTarget = -0.18; armDepth = 0.08;
-      } else if (zone === "capabilities") {
+      } else if (zone === "capabilities" && gestureActive) {
         rightShoulderTarget = 0.95; rightElbowTarget = -0.52;
         rightWristTarget = 0.12; armDepth = -0.1;
-      } else if (zone === "career") {
+      } else if (zone === "career" && gestureActive) {
         rightShoulderTarget = 0.82; rightElbowTarget = -0.42;
         rightWristTarget = 0.1; armDepth = -0.07;
-      } else if (zone === "work") {
+      } else if (zone === "work" && gestureActive) {
         leftShoulderTarget = -0.78; leftElbowTarget = 0.4;
         leftWristTarget = -0.12; armDepth = 0.08;
-      } else if (zone === "toolkit") {
+      } else if (zone === "toolkit" && gestureActive) {
         leftShoulderTarget = -0.55; leftElbowTarget = 0.35;
         leftWristTarget = -0.08;
         rightShoulderTarget = 0.48; rightElbowTarget = -0.3;
         rightWristTarget = 0.06; armDepth = -0.04;
-      } else if (zone === "contact") {
-        rightShoulderTarget = 1.68; rightElbowTarget = 1.05;
-        rightWristTarget = contactWaveActive
-          ? Math.sin((timeSinceEntry - 350) * 0.012) * 0.19
-          : 0.08;
+      } else if (zone === "contact" && contactWaveActive) {
+        const wave = contactWaveActive
+          ? Math.sin(
+              ((celebrationWaveActive ? timeSinceCelebration : timeSinceEntry) - 350) *
+                0.014,
+            )
+          : 0;
+        rightShoulderTarget = 1.68;
+        rightElbowTarget = 1.05 + wave * 0.07;
+        rightWristTarget = contactWaveActive ? wave * 0.22 : 0.08;
         armDepth = -0.14;
       }
 
       const pointingTarget = pointingTargets.get(zone);
-      if (pointingTarget && zone === "about") {
+      if (pointingTarget && gestureActive && zone === "about") {
         const pointingPose = solvePointingPose(pointingTarget, leftArm, -1);
         leftShoulderTarget = pointingPose.shoulder;
         leftElbowTarget = pointingPose.elbow;
@@ -1130,6 +1225,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         armDepth = 0.06;
       } else if (
         pointingTarget &&
+        gestureActive &&
         (zone === "capabilities" || zone === "career" || zone === "toolkit")
       ) {
         const pointingPose = solvePointingPose(pointingTarget, rightArm, 1);
@@ -1137,7 +1233,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         rightElbowTarget = pointingPose.elbow;
         rightWristTarget = 0;
         armDepth = -0.06;
-      } else if (pointingTarget && zone === "work") {
+      } else if (pointingTarget && gestureActive && zone === "work") {
         const pointingPose = solvePointingPose(pointingTarget, leftArm, -1);
         leftShoulderTarget = pointingPose.shoulder;
         leftElbowTarget = pointingPose.elbow;
@@ -1146,10 +1242,22 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       }
 
       const gestureProgress = motion
-        ? THREE.MathUtils.clamp((timeSinceEntry - 250) / 400, 0, 1)
+        ? THREE.MathUtils.clamp((timeSinceEntry - 180) / 620, 0, 1)
         : 1;
+      const gestureEntryBlend =
+        gestureProgress *
+        gestureProgress *
+        gestureProgress *
+        (gestureProgress * (gestureProgress * 6 - 15) + 10);
+      const exitProgress = THREE.MathUtils.clamp(
+        (gestureDuration[zone] - timeSinceEntry) / 550,
+        0,
+        1,
+      );
       const gestureBlend =
-        gestureProgress * gestureProgress * (3 - 2 * gestureProgress);
+        celebrationWaveActive
+          ? 1
+          : gestureEntryBlend * exitProgress;
       const leftShoulderRest = -0.06;
       const rightShoulderRest = 0.06;
       leftShoulderTarget = THREE.MathUtils.lerp(
@@ -1268,8 +1376,11 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         leftForearmTwist = -0.5;
       }
       if (heroGreeting || contactWaveActive) {
+        const waveClock = heroGreeting
+          ? heroWaveTime - 250
+          : (celebrationWaveActive ? timeSinceCelebration : timeSinceEntry) - 350;
         rightFingerCurl = 0.04;
-        rightForearmTwist = 1.3;
+        rightForearmTwist = 1.28 + Math.sin(waveClock * 0.014) * 0.08;
       } else if (zone === "capabilities" || zone === "career") {
         rightFingerCurl = 0.04;
         rightForearmTwist = 0.5;
@@ -1358,6 +1469,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
+    zoneEntryTimeRef.current = performance.now();
     render();
 
     return () => {

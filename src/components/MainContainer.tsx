@@ -10,22 +10,25 @@ import {
   Linkedin,
   Mail,
   Menu,
+  Pause,
+  Play,
   Send,
   Sparkles,
   X,
 } from "lucide-react";
-import { lazy, Suspense, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { digitalSkills, experiences, projects } from "../data/portfolio";
 import { sendEmail } from "../services/emailService";
-import type { CharacterZone } from "./Character/ProceduralCharacter";
-
-const ProceduralCharacter = lazy(() => import("./Character/ProceduralCharacter"));
+import ProceduralCharacter, {
+  type CharacterZone,
+} from "./Character/ProceduralCharacter";
 
 const navigation = [
   { id: "about", label: "About" },
   { id: "capabilities", label: "What I do" },
   { id: "career", label: "Career" },
   { id: "work", label: "Work" },
+  { id: "toolkit", label: "Toolkit" },
   { id: "contact", label: "Contact" },
 ];
 
@@ -53,7 +56,10 @@ const services = [
 const MainContainer = () => {
   const [activeZone, setActiveZone] = useState<CharacterZone>("hero");
   const [navOpen, setNavOpen] = useState(false);
-  const [expandedService, setExpandedService] = useState(0);
+  const [expandedService, setExpandedService] = useState<number | null>(0);
+  const [characterPaused, setCharacterPaused] = useState(false);
+  const [characterSignal, setCharacterSignal] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
@@ -61,6 +67,8 @@ const MainContainer = () => {
   const [company, setCompany] = useState("");
   const [formState, setFormState] = useState<"idle" | "sending" | "success" | "error">("idle");
   const cursorRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -88,6 +96,12 @@ const MainContainer = () => {
 
     const updateActiveSection = () => {
       frame = 0;
+      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(
+        scrollableHeight > 0
+          ? Math.min(Math.max(window.scrollY / scrollableHeight, 0), 1)
+          : 0,
+      );
       const ranked = sections
         .map((section) => ({ section, score: scoreSection(section) }))
         .sort((a, b) => a.score - b.score);
@@ -174,15 +188,40 @@ const MainContainer = () => {
 
   useEffect(() => {
     document.body.style.overflow = navOpen ? "hidden" : "";
-    return () => {
+    if (!navOpen) return () => {
       document.body.style.overflow = "";
     };
-  }, [navOpen]);
 
-  const techStack = useMemo(
-    () => [...new Set(digitalSkills.flatMap((group) => group.skills))].slice(0, 24),
-    [],
-  );
+    const nav = navRef.current;
+    const focusable = nav
+      ? [...nav.querySelectorAll<HTMLElement>("button, a[href]")]
+      : [];
+    focusable[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setNavOpen(false);
+        menuToggleRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [navOpen]);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
@@ -198,7 +237,15 @@ const MainContainer = () => {
     setFormState("sending");
     const sent = await sendEmail(formData);
     setFormState(sent ? "success" : "error");
-    if (sent) setFormData({ name: "", email: "", message: "" });
+    if (sent) {
+      setFormData({ name: "", email: "", message: "" });
+      setCharacterSignal((signal) => signal + 1);
+    }
+  };
+
+  const updateFormField = (field: keyof typeof formData, value: string) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    if (formState !== "idle" && formState !== "sending") setFormState("idle");
   };
 
   return (
@@ -211,22 +258,12 @@ const MainContainer = () => {
       <div className="page-grain" aria-hidden="true" />
       <div ref={cursorRef} className="custom-cursor" aria-hidden="true" />
 
-      <Suspense
-        fallback={
-          <div className="character-stage character-loading" aria-hidden="true">
-            <div className="character-fallback">
-              <span className="fallback-antenna" />
-              <span className="fallback-face">
-                <i />
-                <i />
-              </span>
-              <span className="fallback-body" />
-            </div>
-          </div>
-        }
-      >
-        <ProceduralCharacter activeZone={activeZone} reducedMotion={reducedMotion} />
-      </Suspense>
+      <ProceduralCharacter
+        activeZone={activeZone}
+        reducedMotion={reducedMotion}
+        motionPaused={characterPaused}
+        celebrationSignal={characterSignal}
+      />
 
       <header className="site-header">
         <button className="site-brand" type="button" onClick={() => scrollTo("home")} aria-label="Go home">
@@ -242,12 +279,18 @@ const MainContainer = () => {
           github.com/i-am-ramprakash <ArrowUpRight />
           <span className="sr-only">(opens in a new tab)</span>
         </a>
-        <nav className={`site-nav ${navOpen ? "nav-open" : ""}`} aria-label="Primary navigation">
+        <nav
+          ref={navRef}
+          id="primary-navigation"
+          className={`site-nav ${navOpen ? "nav-open" : ""}`}
+          aria-label="Primary navigation"
+        >
           {navigation.map((item) => (
             <button
               type="button"
               key={item.id}
               className={activeZone === (item.id === "capabilities" ? "capabilities" : item.id) ? "active" : ""}
+              aria-current={activeZone === item.id ? "page" : undefined}
               onClick={() => scrollTo(item.id)}
             >
               <span>{item.label}</span>
@@ -256,17 +299,25 @@ const MainContainer = () => {
           ))}
         </nav>
         <button
+          ref={menuToggleRef}
           type="button"
           className="menu-toggle"
           onClick={() => setNavOpen((value) => !value)}
           aria-expanded={navOpen}
+          aria-controls="primary-navigation"
           aria-label={navOpen ? "Close navigation" : "Open navigation"}
         >
           {navOpen ? <X /> : <Menu />}
         </button>
+        <div className="page-progress" aria-hidden="true">
+          <span style={{ transform: `scaleX(${scrollProgress})` }} />
+        </div>
       </header>
 
-      <aside className="social-rail" aria-label="Social profiles">
+      <aside
+        className={`social-rail ${activeZone === "contact" ? "social-rail-muted" : ""}`}
+        aria-label="Social profiles"
+      >
         <span>CONNECT</span>
         <i aria-hidden="true" />
         <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer" aria-label="GitHub">
@@ -281,6 +332,16 @@ const MainContainer = () => {
           <Linkedin />
         </a>
       </aside>
+      <button
+        type="button"
+        className="motion-toggle"
+        onClick={() => setCharacterPaused((paused) => !paused)}
+        aria-pressed={characterPaused}
+        aria-label={characterPaused ? "Resume character animation" : "Pause character animation"}
+      >
+        {characterPaused ? <Play /> : <Pause />}
+        <span>{characterPaused ? "Resume character" : "Pause character"}</span>
+      </button>
 
       <main id="main-content">
         <section id="home" className="landing-section" data-character-zone="hero" aria-labelledby="hero-title">
@@ -315,22 +376,26 @@ const MainContainer = () => {
 
         <section id="about" className="about-section page-section" data-character-zone="about" aria-labelledby="about-title">
           <div className="section-number">01 / ABOUT</div>
-          <div className="about-card reveal-card">
-            <p className="eyebrow">FULL-STACK · SYSTEMS · PRODUCT</p>
-            <h2 id="about-title" data-character-target="about">
-              I turn complex systems into <span>clear products.</span>
-            </h2>
-            <p>
-              I’m Ram Prakash Sah, a full-stack systems engineer with experience across enterprise
-              banking software, multi-vendor platforms, Android products, real-time communication,
-              and interactive applications.
-            </p>
-            <p>
-              My work connects robust Java and Spring Boot foundations with thoughtful React and
-              TypeScript interfaces—because reliable engineering and good experience design belong
-              together.
-            </p>
-            <div className="about-facts">
+          <div className="about-layout reveal-card">
+            <div className="about-copy">
+              <p className="eyebrow">FULL-STACK · SYSTEMS · PRODUCT</p>
+              <h2 id="about-title" data-character-target="about">
+                I turn complex systems into <span>clear products.</span>
+              </h2>
+              <div className="about-story">
+                <p>
+                  I’m Ram Prakash Sah, a full-stack systems engineer with experience across enterprise
+                  banking software, multi-vendor platforms, Android products, real-time communication,
+                  and interactive applications.
+                </p>
+                <p>
+                  My work connects robust Java and Spring Boot foundations with thoughtful React and
+                  TypeScript interfaces—because reliable engineering and good experience design belong
+                  together.
+                </p>
+              </div>
+            </div>
+            <aside className="about-facts" aria-label="Profile facts">
               <div>
                 <span>BASED IN</span>
                 <b>Kathmandu, Nepal</b>
@@ -343,7 +408,7 @@ const MainContainer = () => {
                 <span>FOCUS</span>
                 <b>Product engineering</b>
               </div>
-            </div>
+            </aside>
           </div>
         </section>
 
@@ -354,43 +419,45 @@ const MainContainer = () => {
           aria-labelledby="capabilities-title"
         >
           <div className="section-number">02 / CAPABILITIES</div>
-          <div className="capabilities-heading">
-            <p>WHAT</p>
-            <h2 id="capabilities-title" data-character-target="capabilities">
-              I <span>DO</span>
-            </h2>
-          </div>
-          <div className="service-stack">
-            {services.map((service, index) => {
-              const expanded = expandedService === index;
-              return (
-                <article className={`service-card ${expanded ? "expanded" : ""}`} key={service.title}>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedService(index)}
-                    aria-expanded={expanded}
-                    aria-controls={`service-panel-${index}`}
-                  >
-                    <span className="service-index">0{index + 1}</span>
-                    <span>
-                      <b>{service.title}</b>
-                      <small>{service.subtitle}</small>
-                    </span>
-                    <span className="service-plus" aria-hidden="true">
-                      {expanded ? "—" : "+"}
-                    </span>
-                  </button>
-                  <div id={`service-panel-${index}`} className="service-panel">
-                    <p>{service.copy}</p>
-                    <div>
-                      {service.skills.map((skill) => (
-                        <span key={skill}>{skill}</span>
-                      ))}
+          <div className="capabilities-content">
+            <header className="capabilities-heading">
+              <p>WHAT</p>
+              <h2 id="capabilities-title" data-character-target="capabilities">
+                I <span>DO</span>
+              </h2>
+            </header>
+            <div className="service-stack">
+              {services.map((service, index) => {
+                const expanded = expandedService === index;
+                return (
+                  <article className={`service-card ${expanded ? "expanded" : ""}`} key={service.title}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedService(expanded ? null : index)}
+                      aria-expanded={expanded}
+                      aria-controls={`service-panel-${index}`}
+                    >
+                      <span className="service-index">0{index + 1}</span>
+                      <span>
+                        <b>{service.title}</b>
+                        <small>{service.subtitle}</small>
+                      </span>
+                      <span className="service-plus" aria-hidden="true">
+                        {expanded ? "—" : "+"}
+                      </span>
+                    </button>
+                    <div id={`service-panel-${index}`} className="service-panel">
+                      <p>{service.copy}</p>
+                      <div>
+                        {service.skills.map((skill) => (
+                          <span key={skill}>{skill}</span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
+                  </article>
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -403,25 +470,31 @@ const MainContainer = () => {
           <div className="career-list">
             {[...experiences].reverse().map((experience, index) => (
               <article className="career-entry" key={experience.id}>
-                <span className="career-count">0{index + 1}</span>
-                <div className="career-role">
-                  <span>{experience.period}</span>
-                  <h3>{experience.title}</h3>
-                  <b>{experience.company}</b>
-                  <small>{experience.location}</small>
+                <div className="career-marker" aria-hidden="true">
+                  <span className="career-count">0{index + 1}</span>
+                  <i />
                 </div>
-                <div className="career-description">
+                <div className="career-card">
+                  <header className="career-role">
+                    <span>{experience.period}</span>
+                    <h3>{experience.title}</h3>
+                    <b>{experience.company}</b>
+                    <small>{experience.location}</small>
+                  </header>
                   <p>{experience.objective}</p>
-                  <ul>
-                    {experience.responsibilities.slice(0, 3).map((responsibility) => (
-                      <li key={responsibility}>{responsibility}</li>
-                    ))}
-                  </ul>
-                  <div className="tag-list">
-                    {experience.technologies.map((technology) => (
-                      <span key={technology}>{technology}</span>
-                    ))}
-                  </div>
+                  <details>
+                    <summary>Responsibilities and technology</summary>
+                    <ul>
+                      {experience.responsibilities.map((responsibility) => (
+                        <li key={responsibility}>{responsibility}</li>
+                      ))}
+                    </ul>
+                    <div className="tag-list">
+                      {experience.technologies.map((technology) => (
+                        <span key={technology}>{technology}</span>
+                      ))}
+                    </div>
+                  </details>
                 </div>
               </article>
             ))}
@@ -438,7 +511,10 @@ const MainContainer = () => {
           </header>
           <div className="project-list">
             {projects.map((project, index) => (
-              <article className="project-card" key={project.id}>
+              <article
+                className={`project-card ${index === 0 ? "project-featured" : ""}`}
+                key={project.id}
+              >
                 <a
                   className="project-image"
                   href={project.link}
@@ -469,7 +545,10 @@ const MainContainer = () => {
                     <p>{project.outcome}</p>
                   </div>
                   <details>
-                    <summary>Case study details</summary>
+                    <summary>
+                      <span>View case study</span>
+                      <ArrowDown />
+                    </summary>
                     <div className="project-detail-grid">
                       <div>
                         <span>ROLE</span>
@@ -507,21 +586,26 @@ const MainContainer = () => {
           </div>
         </section>
 
-        <section className="tech-section" data-character-zone="toolkit" aria-labelledby="tech-title">
-          <div className="section-number">05 / TOOLKIT</div>
-          <h2 id="tech-title">
-            TECHNOLOGIES I USE TO <span>SHIP</span>
-          </h2>
-          <div
-            className="tech-marquee"
-            data-character-target="toolkit"
-            aria-label={techStack.join(", ")}
-          >
-            <div>
-              {[...techStack, ...techStack].map((technology, index) => (
-                <span key={`${technology}-${index}`}>
-                  <Code2 /> {technology}
-                </span>
+        <section id="toolkit" className="tech-section" data-character-zone="toolkit" aria-labelledby="tech-title">
+          <div className="tech-inner">
+            <div className="section-number">05 / TOOLKIT</div>
+            <h2 id="tech-title">
+              TECHNOLOGIES I USE TO <span>SHIP</span>
+            </h2>
+            <div className="toolkit-groups" data-character-target="toolkit">
+              {digitalSkills.map((group, index) => (
+                <article className="toolkit-group" key={group.category}>
+                  <header>
+                    <span>0{index + 1}</span>
+                    <Code2 />
+                    <h3>{group.category}</h3>
+                  </header>
+                  <div>
+                    {group.skills.map((technology) => (
+                      <span key={technology}>{technology}</span>
+                    ))}
+                  </div>
+                </article>
               ))}
             </div>
           </div>
@@ -529,90 +613,98 @@ const MainContainer = () => {
 
         <section id="contact" className="contact-section page-section" data-character-zone="contact" aria-labelledby="contact-title">
           <div className="section-number">06 / CONTACT</div>
-          <div className="contact-intro">
-            <p>HAVE A PROJECT, ROLE, OR IDEA?</p>
-            <h2 id="contact-title" data-character-target="contact">
-              LET&apos;S MAKE
-              <br />
-              SOMETHING <span>WORK.</span>
-            </h2>
-            <div className="contact-links">
-              <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer">
-                <Github /> GitHub <ArrowUpRight />
-              </a>
-              <a
-                href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
-                target="_blank"
-                rel="noreferrer"
+          <div className="contact-content">
+            <div className="contact-intro">
+              <p>HAVE A PROJECT, ROLE, OR IDEA?</p>
+              <h2 id="contact-title" data-character-target="contact">
+                LET&apos;S MAKE
+                <br />
+                SOMETHING <span>WORK.</span>
+              </h2>
+              <div className="contact-links">
+                <a href="https://github.com/i-am-ramprakash" target="_blank" rel="noreferrer">
+                  <Github /> GitHub <ArrowUpRight />
+                </a>
+                <a
+                  href="https://np.linkedin.com/in/ramprakash-sah-b368a5179"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Linkedin /> LinkedIn <ArrowUpRight />
+                </a>
+              </div>
+            </div>
+            <form className="contact-form" onSubmit={handleSubmit}>
+              <div className="form-title">
+                <Sparkles />
+                <span>
+                  <b>Send a message</b>
+                  <small>I’ll reply to the email you provide.</small>
+                </span>
+              </div>
+              <input
+                className="honeypot"
+                type="text"
+                name="b_hp_check"
+                value={company}
+                onChange={(event) => setCompany(event.target.value)}
+                tabIndex={-1}
+                autoComplete="new-password"
+                aria-hidden="true"
+                style={{ display: "none" }}
+              />
+              <div className="form-fields">
+                <label>
+                  <span>Your name</span>
+                  <input
+                    required
+                    autoComplete="name"
+                    value={formData.name}
+                    onChange={(event) => updateFormField("name", event.target.value)}
+                    placeholder="How should I address you?"
+                  />
+                </label>
+                <label>
+                  <span>Email address</span>
+                  <input
+                    required
+                    type="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={(event) => updateFormField("email", event.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </label>
+              </div>
+              <label>
+                <span>
+                  Message <i>{formData.message.length}/1000</i>
+                </span>
+                <textarea
+                  required
+                  minLength={20}
+                  maxLength={1000}
+                  rows={5}
+                  value={formData.message}
+                  onChange={(event) => updateFormField("message", event.target.value)}
+                  placeholder="Tell me about the opportunity or problem..."
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={formState === "sending"}
+                aria-busy={formState === "sending"}
               >
-                <Linkedin /> LinkedIn <ArrowUpRight />
-              </a>
-            </div>
+                {formState === "sending" ? "Sending…" : "Send message"} <Send />
+              </button>
+              <div className="form-feedback" aria-live="polite">
+                {formState === "success" && <p className="success">Message sent. Thank you.</p>}
+                {formState === "error" && (
+                  <p className="error">The message could not be sent. Please try LinkedIn instead.</p>
+                )}
+              </div>
+            </form>
           </div>
-          <form className="contact-form" onSubmit={handleSubmit}>
-            <div className="form-title">
-              <Sparkles />
-              <span>
-                <b>Send a message</b>
-                <small>I’ll reply to the email you provide.</small>
-              </span>
-            </div>
-            <input
-              className="honeypot"
-              type="text"
-              name="b_hp_check"
-              value={company}
-              onChange={(event) => setCompany(event.target.value)}
-              tabIndex={-1}
-              autoComplete="new-password"
-              aria-hidden="true"
-              style={{ display: "none" }}
-            />
-            <label>
-              <span>Your name</span>
-              <input
-                required
-                autoComplete="name"
-                value={formData.name}
-                onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                placeholder="How should I address you?"
-              />
-            </label>
-            <label>
-              <span>Email address</span>
-              <input
-                required
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={(event) => setFormData({ ...formData, email: event.target.value })}
-                placeholder="you@example.com"
-              />
-            </label>
-            <label>
-              <span>
-                Message <i>{formData.message.length}/1000</i>
-              </span>
-              <textarea
-                required
-                minLength={20}
-                maxLength={1000}
-                rows={6}
-                value={formData.message}
-                onChange={(event) => setFormData({ ...formData, message: event.target.value })}
-                placeholder="Tell me about the opportunity or problem..."
-              />
-            </label>
-            <button type="submit" disabled={formState === "sending"}>
-              {formState === "sending" ? "Sending…" : "Send message"} <Send />
-            </button>
-            <div className="form-feedback" aria-live="polite">
-              {formState === "success" && <p className="success">Message sent. Thank you.</p>}
-              {formState === "error" && (
-                <p className="error">The message could not be sent. Please try LinkedIn instead.</p>
-              )}
-            </div>
-          </form>
         </section>
       </main>
 

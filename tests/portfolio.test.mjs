@@ -13,7 +13,7 @@ test("page exposes core landmarks, sections, and a skip link", () => {
   for (const marker of ["<header", "<nav", "<main", "<section", "<footer", "skip-link"]) {
     assert.match(app, new RegExp(marker));
   }
-  for (const section of ["home", "about", "capabilities", "career", "work", "contact"]) {
+  for (const section of ["home", "about", "capabilities", "career", "work", "toolkit", "contact"]) {
     assert.match(app, new RegExp(`id="${section}"`));
   }
 });
@@ -71,12 +71,17 @@ test("reduced motion clears accumulated physical energy", () => {
   assert.match(character, /const travelEffect = motion && phase === "traveling"/);
 });
 
-test("section changes use deterministic neutral, travel, and gesture phases", () => {
+test("section travel preserves velocity and blends gestures with smootherstep", () => {
   assert.match(character, /transitionPhaseRef/);
-  assert.match(character, /phase === "neutral" && timeSinceEntry >= 60/);
-  assert.match(character, /phase === "traveling" && timeSinceEntry >= 500/);
-  assert.match(character, /gestureProgress \* gestureProgress \* \(3 - 2 \* gestureProgress\)/);
-  assert.match(character, /MathUtils\.lerp\(transitionStartX,\s*targetX/);
+  assert.match(character, /const smoothDampValue/);
+  assert.match(character, /phase === "neutral"/);
+  assert.match(character, /phase === "traveling" && timeSinceEntry >= 850/);
+  assert.match(character, /gestureProgress \* 6 - 15/);
+  assert.match(character, /rootMotion\.x/);
+  assert.match(character, /rootMotion\.y/);
+  assert.match(character, /rootMotion\.scale/);
+  assert.match(character, /rootMotion\.rotation/);
+  assert.doesNotMatch(character, /transitionStartX|transitionStartY|transitionStartScale/);
   assert.match(app, /data-character-zone="toolkit"/);
   assert.match(app, /activationLine/);
   assert.match(app, /candidateScore \+ 32 < activeScore/);
@@ -85,7 +90,7 @@ test("section changes use deterministic neutral, travel, and gesture phases", ()
 test("camera framing and section safe regions fit the complete model", () => {
   assert.match(character, /const modelBounds = new THREE\.Box3/);
   assert.match(character, /const getFittedFrame/);
-  assert.match(character, /navbarSafeBottom \+ 24/);
+  assert.match(character, /navbarSafeBottom \+ 60/);
   assert.match(character, /viewportHeight - 32/);
   assert.match(character, /zone === "work"/);
   assert.match(character, /zone === "toolkit"/);
@@ -100,9 +105,15 @@ test("pointing and waving use complete target-aware arm mechanics", () => {
   assert.match(character, /getBoundingClientRect\(\)/);
   assert.match(character, /screenPointToRoot/);
   assert.match(character, /rightShoulderTarget = 1\.68/);
-  assert.match(character, /rightElbowTarget = 1\.05/);
-  assert.match(character, /rightForearmTwist = 1\.3/);
-  assert.match(character, /timeSinceEntry - 250/);
+  assert.match(character, /rightElbowTarget = 1\.05 \+ wave \* 0\.07/);
+  assert.match(character, /rightForearmTwist = 1\.28/);
+  assert.match(character, /const heroWaveTime = timeSinceEntry/);
+  assert.match(character, /const gestureDuration/);
+  assert.match(character, /const gestureActive/);
+  assert.match(character, /const celebrationWaveActive/);
+  const wavingHandRise =
+    -1.02 * Math.cos(1.68) - 0.88 * Math.cos(1.68 + 1.05);
+  assert.ok(wavingHandRise > 0.8, "The waving hand must remain above its shoulder");
 });
 
 test("renderer quality adapts without shadowing every decorative mesh", () => {
@@ -111,6 +122,44 @@ test("renderer quality adapts without shadowing every decorative mesh", () => {
   assert.match(character, /object\.userData\.majorShadow/);
   assert.match(character, /mesh\.castShadow = false/);
   assert.match(character, /new THREE\.MeshStandardMaterial/);
+});
+
+test("first load renders one silver robot with ready-relative wave timing", () => {
+  assert.doesNotMatch(app, /Suspense|character-loading|character-fallback/);
+  assert.doesNotMatch(app, /lazy\(\(\) => import/);
+  assert.match(character, /color: 0x929ba4/);
+  assert.match(character, /color: 0xd7dde2/);
+  assert.match(character, /zoneEntryTimeRef\.current = performance\.now\(\);\s*render\(\)/);
+  assert.match(character, /heroWaveTime >= 250 && heroWaveTime < 3600/);
+});
+
+test("character motion can rest, pause, and acknowledge a successful contact", () => {
+  assert.match(app, /aria-label=\{characterPaused \? "Resume character animation"/);
+  assert.match(app, /aria-pressed=\{characterPaused\}/);
+  assert.match(app, /setCharacterSignal\(\(signal\) => signal \+ 1\)/);
+  assert.match(character, /motionPausedRef/);
+  assert.match(character, /celebrationTimeRef/);
+  assert.match(character, /1000 \/ 30/);
+  assert.match(character, /1000 \/ 12/);
+  assert.match(character, /gestureEntryBlend \* exitProgress/);
+  assert.match(character, /window\.innerWidth < 900/);
+});
+
+test("navigation exposes toolkit, progress, current state, and mobile keyboard handling", () => {
+  assert.match(app, /\{ id: "toolkit", label: "Toolkit" \}/);
+  assert.match(app, /className="page-progress"/);
+  assert.match(app, /aria-current=\{activeZone === item\.id \? "page"/);
+  assert.match(app, /event\.key === "Escape"/);
+  assert.match(app, /event\.key !== "Tab"/);
+  assert.match(app, /aria-controls="primary-navigation"/);
+  assert.match(css, /\.site-nav\.nav-open/);
+});
+
+test("contact feedback resets on editing and submit state is announced", () => {
+  assert.match(app, /const updateFormField/);
+  assert.match(app, /setFormState\("idle"\)/);
+  assert.match(app, /aria-busy=\{formState === "sending"\}/);
+  assert.match(app, /<span>View case study<\/span>/);
 });
 
 test("contact and professional links use portfolio owner data", () => {
@@ -138,8 +187,21 @@ test("responsive, pointer, and reduced-motion safeguards remain present", () => 
   assert.match(css, /@media \(max-width: 620px\)/);
   assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(css, /\.reduced-motion \.tech-marquee/);
   assert.match(css, /overflow-wrap: anywhere/);
+});
+
+test("editorial section redesign preserves data while reducing visual weight", () => {
+  assert.match(app, /className="about-layout reveal-card"/);
+  assert.match(app, /className="capabilities-content"/);
+  assert.match(app, /className="career-marker"/);
+  assert.match(app, /className=\{`project-card \$\{index === 0 \? "project-featured" : ""\}`\}/);
+  assert.match(app, /digitalSkills\.map/);
+  assert.match(app, /experience\.responsibilities\.map/);
+  assert.doesNotMatch(app, /experience\.responsibilities\.slice/);
+  assert.doesNotMatch(app, /tech-marquee/);
+  assert.match(css, /\.project-list\s*\{[\s\S]*grid-template-columns: repeat\(2/);
+  assert.match(css, /\.project-featured\s*\{[\s\S]*width: min\(66%, 940px\)/);
+  assert.doesNotMatch(css, /min-height:\s*570px/);
 });
 
 test("social sharing metadata and attribution are present", () => {
@@ -147,6 +209,7 @@ test("social sharing metadata and attribution are present", () => {
   assert.match(html, /name="twitter:image" content="\/og-image-orange\.jpg"/);
   assert.ok(existsSync(new URL("../public/og-image-orange.jpg", import.meta.url)));
   assert.match(html, /application\/ld\+json/);
+  assert.match(html, /name="robots" content="index, follow, max-image-preview:large"/);
   assert.match(app, /Interaction direction inspired by/);
   assert.match(app, /Moncy Yohannan/);
 });
