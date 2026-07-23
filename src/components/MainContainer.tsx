@@ -70,50 +70,75 @@ const MainContainer = () => {
   }, []);
 
   useEffect(() => {
-    const sections = document.querySelectorAll<HTMLElement>("[data-character-zone]");
-    const visibleSections = new Map<HTMLElement, number>();
-    let lastObservedScrollY = window.scrollY;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const section = entry.target as HTMLElement;
-          if (entry.isIntersecting) visibleSections.set(section, entry.intersectionRatio);
-          else visibleSections.delete(section);
-        });
+    const sections = [...document.querySelectorAll<HTMLElement>("[data-character-zone]")];
+    let currentZone: CharacterZone = "hero";
+    let candidateZone: CharacterZone = "hero";
+    let candidateTimer = 0;
+    let frame = 0;
 
-        const scrollingDown = window.scrollY >= lastObservedScrollY;
-        lastObservedScrollY = window.scrollY;
-        const viewportCenter = window.innerHeight / 2;
-        let bestSection: HTMLElement | null = null;
-        let bestScore = Number.POSITIVE_INFINITY;
+    const scoreSection = (section: HTMLElement) => {
+      const rect = section.getBoundingClientRect();
+      const activationLine = window.innerHeight * 0.48;
+      const visible = rect.bottom > 0 && rect.top < window.innerHeight;
+      return visible
+        ? Math.abs(Math.min(Math.max(activationLine, rect.top), rect.bottom) - activationLine) +
+            Math.abs(rect.top + rect.height / 2 - activationLine) * 0.12
+        : Number.POSITIVE_INFINITY;
+    };
 
-        visibleSections.forEach((_, section) => {
-          const rect = section.getBoundingClientRect();
-          const midpointDistance = Math.abs(rect.top + rect.height / 2 - viewportCenter);
-          const directionPenalty = scrollingDown
-            ? rect.top < 0
-              ? 80
-              : 0
-            : rect.bottom > window.innerHeight
-              ? 80
-              : 0;
-          const score = midpointDistance + directionPenalty;
-          if (score < bestScore) {
-            bestScore = score;
-            bestSection = section;
-          }
-        });
+    const updateActiveSection = () => {
+      frame = 0;
+      const ranked = sections
+        .map((section) => ({ section, score: scoreSection(section) }))
+        .sort((a, b) => a.score - b.score);
+      const best = ranked[0];
+      if (!best || !Number.isFinite(best.score)) return;
 
-        const zone = bestSection?.getAttribute("data-character-zone") as CharacterZone | null;
-        if (zone) setActiveZone(zone);
-      },
-      {
-        rootMargin: "0px",
-        threshold: Array.from({ length: 21 }, (_, index) => index * 0.05),
-      },
-    );
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+      const nextZone = best.section.getAttribute("data-character-zone") as CharacterZone;
+      const currentSection = sections.find(
+        (section) => section.getAttribute("data-character-zone") === currentZone,
+      );
+      const currentScore = currentSection ? scoreSection(currentSection) : Number.POSITIVE_INFINITY;
+      const clearlyDominant = best.score + 48 < currentScore;
+      if (nextZone === currentZone || !clearlyDominant) {
+        candidateZone = currentZone;
+        window.clearTimeout(candidateTimer);
+        return;
+      }
+      if (nextZone === candidateZone) return;
+
+      candidateZone = nextZone;
+      window.clearTimeout(candidateTimer);
+      candidateTimer = window.setTimeout(() => {
+        const candidate = sections.find(
+          (section) => section.getAttribute("data-character-zone") === candidateZone,
+        );
+        if (!candidate) return;
+        const candidateScore = scoreSection(candidate);
+        const active = sections.find(
+          (section) => section.getAttribute("data-character-zone") === currentZone,
+        );
+        const activeScore = active ? scoreSection(active) : Number.POSITIVE_INFINITY;
+        if (candidateScore + 32 < activeScore) {
+          currentZone = candidateZone;
+          setActiveZone(currentZone);
+        }
+        candidateZone = currentZone;
+      }, 120);
+    };
+
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateActiveSection);
+    };
+    updateActiveSection();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(candidateTimer);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -292,7 +317,7 @@ const MainContainer = () => {
           <div className="section-number">01 / ABOUT</div>
           <div className="about-card reveal-card">
             <p className="eyebrow">FULL-STACK · SYSTEMS · PRODUCT</p>
-            <h2 id="about-title">
+            <h2 id="about-title" data-character-target="about">
               I turn complex systems into <span>clear products.</span>
             </h2>
             <p>
@@ -331,7 +356,7 @@ const MainContainer = () => {
           <div className="section-number">02 / CAPABILITIES</div>
           <div className="capabilities-heading">
             <p>WHAT</p>
-            <h2 id="capabilities-title">
+            <h2 id="capabilities-title" data-character-target="capabilities">
               I <span>DO</span>
             </h2>
           </div>
@@ -373,7 +398,7 @@ const MainContainer = () => {
           <div className="section-number">03 / EXPERIENCE</div>
           <header className="career-heading">
             <p>MY CAREER &</p>
-            <h2 id="career-title">EXPERIENCE</h2>
+            <h2 id="career-title" data-character-target="career">EXPERIENCE</h2>
           </header>
           <div className="career-list">
             {[...experiences].reverse().map((experience, index) => (
@@ -407,7 +432,7 @@ const MainContainer = () => {
           <div className="section-number">04 / SELECTED WORK</div>
           <header className="work-heading">
             <p>A SELECTION OF</p>
-            <h2 id="work-title">
+            <h2 id="work-title" data-character-target="work">
               THINGS I&apos;VE <span>BUILT</span>
             </h2>
           </header>
@@ -487,7 +512,11 @@ const MainContainer = () => {
           <h2 id="tech-title">
             TECHNOLOGIES I USE TO <span>SHIP</span>
           </h2>
-          <div className="tech-marquee" aria-label={techStack.join(", ")}>
+          <div
+            className="tech-marquee"
+            data-character-target="toolkit"
+            aria-label={techStack.join(", ")}
+          >
             <div>
               {[...techStack, ...techStack].map((technology, index) => (
                 <span key={`${technology}-${index}`}>
@@ -502,7 +531,7 @@ const MainContainer = () => {
           <div className="section-number">06 / CONTACT</div>
           <div className="contact-intro">
             <p>HAVE A PROJECT, ROLE, OR IDEA?</p>
-            <h2 id="contact-title">
+            <h2 id="contact-title" data-character-target="contact">
               LET&apos;S MAKE
               <br />
               SOMETHING <span>WORK.</span>

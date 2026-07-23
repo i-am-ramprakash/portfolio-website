@@ -39,21 +39,26 @@ test("original procedural character supports every page zone", () => {
   assert.doesNotMatch(character, /\.glb|GLTFLoader|\/models\//);
 });
 
-test("character gaze follows the pointer and section focal direction", () => {
-  assert.match(character, /\? pointer\.x \* 0\.36/);
-  assert.match(character, /\? pointer\.x \* 0\.025/);
+test("character gaze is relative to its projected head position", () => {
+  assert.match(character, /head\.getWorldPosition\(projectedHead\)/);
+  assert.match(character, /projectedHead\.project\(camera\)/);
+  assert.match(character, /const gazeDeltaX = pointer\.x - projectedHead\.x/);
+  assert.match(character, /pointerTrackingWeight = THREE\.MathUtils\.damp/);
+  assert.match(character, /pupilTarget\.length\(\) > 0\.038/);
   assert.match(character, /about:\s*\{\s*x:\s*-0\.22/);
   assert.match(character, /capabilities:\s*\{\s*x:\s*0\.24/);
   assert.match(character, /work:\s*\{\s*x:\s*-0\.24/);
   assert.match(character, /toolkit:\s*\{\s*x:\s*0\.15/);
 });
 
-test("character impulses and joints remain physically bounded", () => {
-  assert.match(character, /Math\.min\(speed \* 6,\s*0\.8\)/);
+test("pointer input is frame-smoothed and joints remain physically bounded", () => {
+  assert.match(character, /pointerTarget\.set\(nx, ny\)/);
+  assert.match(character, /pointer\.lerp\(pointerTarget/);
+  assert.doesNotMatch(character, /kick\(sp\.(?:l|r)(?:Shoulder|Elbow|Wrist|Leg)/);
   assert.match(character, /clamp\(rawDelta,\s*-50,\s*50\)/);
   assert.match(character, /springClamped/);
   assert.match(character, /scrollVelocity \+ delta \* 0\.002/);
-  assert.match(character, /shoulder\.rotation\.z = THREE\.MathUtils\.clamp/);
+  assert.match(character, /shoulder\.quaternion\.slerp/);
   assert.match(character, /elbow\.rotation\.z = THREE\.MathUtils\.clamp/);
   assert.match(character, /wrist\.rotation\.z = THREE\.MathUtils\.clamp/);
 });
@@ -68,11 +73,44 @@ test("reduced motion clears accumulated physical energy", () => {
 
 test("section changes use deterministic neutral, travel, and gesture phases", () => {
   assert.match(character, /transitionPhaseRef/);
-  assert.match(character, /phase === "neutral" && timeSinceEntry >= 280/);
-  assert.match(character, /phase === "traveling" && timeSinceEntry >= 700/);
+  assert.match(character, /phase === "neutral" && timeSinceEntry >= 60/);
+  assert.match(character, /phase === "traveling" && timeSinceEntry >= 500/);
+  assert.match(character, /gestureProgress \* gestureProgress \* \(3 - 2 \* gestureProgress\)/);
   assert.match(character, /MathUtils\.lerp\(transitionStartX,\s*targetX/);
   assert.match(app, /data-character-zone="toolkit"/);
-  assert.match(app, /midpointDistance/);
+  assert.match(app, /activationLine/);
+  assert.match(app, /candidateScore \+ 32 < activeScore/);
+});
+
+test("camera framing and section safe regions fit the complete model", () => {
+  assert.match(character, /const modelBounds = new THREE\.Box3/);
+  assert.match(character, /const getFittedFrame/);
+  assert.match(character, /navbarSafeBottom \+ 24/);
+  assert.match(character, /viewportHeight - 32/);
+  assert.match(character, /zone === "work"/);
+  assert.match(character, /zone === "toolkit"/);
+  assert.match(character, /root\.scale\.setScalar\(initialScale\)/);
+});
+
+test("pointing and waving use complete target-aware arm mechanics", () => {
+  for (const zone of ["about", "capabilities", "career", "work", "toolkit", "contact"]) {
+    assert.match(app, new RegExp(`data-character-target="${zone}"`));
+  }
+  assert.match(character, /const solvePointingPose/);
+  assert.match(character, /getBoundingClientRect\(\)/);
+  assert.match(character, /screenPointToRoot/);
+  assert.match(character, /rightShoulderTarget = 1\.68/);
+  assert.match(character, /rightElbowTarget = 1\.05/);
+  assert.match(character, /rightForearmTwist = 1\.3/);
+  assert.match(character, /timeSinceEntry - 250/);
+});
+
+test("renderer quality adapts without shadowing every decorative mesh", () => {
+  assert.match(character, /const qualityDpr = \[1, 1\.15, 1\.5\]/);
+  assert.match(character, /averageFps < 52/);
+  assert.match(character, /object\.userData\.majorShadow/);
+  assert.match(character, /mesh\.castShadow = false/);
+  assert.match(character, /new THREE\.MeshStandardMaterial/);
 });
 
 test("contact and professional links use portfolio owner data", () => {
