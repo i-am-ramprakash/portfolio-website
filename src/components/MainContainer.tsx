@@ -71,15 +71,46 @@ const MainContainer = () => {
 
   useEffect(() => {
     const sections = document.querySelectorAll<HTMLElement>("[data-character-zone]");
+    const visibleSections = new Map<HTMLElement, number>();
+    let lastObservedScrollY = window.scrollY;
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const zone = visible?.target.getAttribute("data-character-zone") as CharacterZone | null;
+        entries.forEach((entry) => {
+          const section = entry.target as HTMLElement;
+          if (entry.isIntersecting) visibleSections.set(section, entry.intersectionRatio);
+          else visibleSections.delete(section);
+        });
+
+        const scrollingDown = window.scrollY >= lastObservedScrollY;
+        lastObservedScrollY = window.scrollY;
+        const viewportCenter = window.innerHeight / 2;
+        let bestSection: HTMLElement | null = null;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        visibleSections.forEach((_, section) => {
+          const rect = section.getBoundingClientRect();
+          const midpointDistance = Math.abs(rect.top + rect.height / 2 - viewportCenter);
+          const directionPenalty = scrollingDown
+            ? rect.top < 0
+              ? 80
+              : 0
+            : rect.bottom > window.innerHeight
+              ? 80
+              : 0;
+          const score = midpointDistance + directionPenalty;
+          if (score < bestScore) {
+            bestScore = score;
+            bestSection = section;
+          }
+        });
+
+        const zone = bestSection?.getAttribute("data-character-zone") as CharacterZone | null;
         if (zone) setActiveZone(zone);
       },
-      { rootMargin: "-15% 0px -25% 0px", threshold: [0, 0.15, 0.45] },
+      {
+        rootMargin: "0px",
+        threshold: Array.from({ length: 21 }, (_, index) => index * 0.05),
+      },
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
@@ -451,7 +482,7 @@ const MainContainer = () => {
           </div>
         </section>
 
-        <section className="tech-section" aria-labelledby="tech-title">
+        <section className="tech-section" data-character-zone="toolkit" aria-labelledby="tech-title">
           <div className="section-number">05 / TOOLKIT</div>
           <h2 id="tech-title">
             TECHNOLOGIES I USE TO <span>SHIP</span>

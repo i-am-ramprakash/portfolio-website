@@ -27,7 +27,7 @@ test("primary interactions expose accessible state and feedback", () => {
 });
 
 test("original procedural character supports every page zone", () => {
-  for (const zone of ["hero", "about", "capabilities", "career", "work", "contact"]) {
+  for (const zone of ["hero", "about", "capabilities", "career", "work", "toolkit", "contact"]) {
     assert.match(character, new RegExp(`${zone}: \\{`));
     assert.match(app, new RegExp(`data-character-zone="${zone}"`));
   }
@@ -37,6 +37,42 @@ test("original procedural character supports every page zone", () => {
   assert.match(character, /renderer\.dispose\(\)/);
   assert.match(character, /webglcontextlost/);
   assert.doesNotMatch(character, /\.glb|GLTFLoader|\/models\//);
+});
+
+test("character gaze follows the pointer and section focal direction", () => {
+  assert.match(character, /\? pointer\.x \* 0\.36/);
+  assert.match(character, /\? pointer\.x \* 0\.025/);
+  assert.match(character, /about:\s*\{\s*x:\s*-0\.22/);
+  assert.match(character, /capabilities:\s*\{\s*x:\s*0\.24/);
+  assert.match(character, /work:\s*\{\s*x:\s*-0\.24/);
+  assert.match(character, /toolkit:\s*\{\s*x:\s*0\.15/);
+});
+
+test("character impulses and joints remain physically bounded", () => {
+  assert.match(character, /Math\.min\(speed \* 6,\s*0\.8\)/);
+  assert.match(character, /clamp\(rawDelta,\s*-50,\s*50\)/);
+  assert.match(character, /springClamped/);
+  assert.match(character, /scrollVelocity \+ delta \* 0\.002/);
+  assert.match(character, /shoulder\.rotation\.z = THREE\.MathUtils\.clamp/);
+  assert.match(character, /elbow\.rotation\.z = THREE\.MathUtils\.clamp/);
+  assert.match(character, /wrist\.rotation\.z = THREE\.MathUtils\.clamp/);
+});
+
+test("reduced motion clears accumulated physical energy", () => {
+  assert.match(character, /if \(!motion\) \{/);
+  assert.match(character, /Object\.values\(sp\)\.forEach/);
+  assert.match(character, /springState\.pos = 0/);
+  assert.match(character, /springState\.vel = 0/);
+  assert.match(character, /const travelEffect = motion && phase === "traveling"/);
+});
+
+test("section changes use deterministic neutral, travel, and gesture phases", () => {
+  assert.match(character, /transitionPhaseRef/);
+  assert.match(character, /phase === "neutral" && timeSinceEntry >= 280/);
+  assert.match(character, /phase === "traveling" && timeSinceEntry >= 700/);
+  assert.match(character, /MathUtils\.lerp\(transitionStartX,\s*targetX/);
+  assert.match(app, /data-character-zone="toolkit"/);
+  assert.match(app, /midpointDistance/);
 });
 
 test("contact and professional links use portfolio owner data", () => {

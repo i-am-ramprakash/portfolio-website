@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-type CharacterZone = "hero" | "about" | "capabilities" | "career" | "work" | "contact";
+type CharacterZone =
+  | "hero"
+  | "about"
+  | "capabilities"
+  | "career"
+  | "work"
+  | "toolkit"
+  | "contact";
 
 interface ProceduralCharacterProps {
   activeZone: CharacterZone;
@@ -9,7 +16,13 @@ interface ProceduralCharacterProps {
 }
 
 type Pose = { x: number; y: number; scale: number; rotation: number };
-type RobotArm = { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group };
+type RobotArm = {
+  shoulder: THREE.Group;
+  elbow: THREE.Group;
+  wrist: THREE.Group;
+  forearmTwistGroup: THREE.Group;
+  fingers: THREE.Group[];
+};
 
 const desktopPoses: Record<CharacterZone, Pose> = {
   hero: { x: 0, y: -0.2, scale: 1.08, rotation: 0 },
@@ -17,7 +30,8 @@ const desktopPoses: Record<CharacterZone, Pose> = {
   capabilities: { x: -3.6, y: -0.3, scale: 0.92, rotation: 0.26 },
   career: { x: -3.8, y: -0.32, scale: 0.88, rotation: 0.28 },
   work: { x: 3.7, y: -0.35, scale: 0.86, rotation: -0.26 },
-  contact: { x: -3.5, y: -0.3, scale: 0.92, rotation: 0.24 },
+  toolkit: { x: -1.8, y: -0.25, scale: 0.88, rotation: 0.12 },
+  contact: { x: -2.8, y: -0.3, scale: 0.9, rotation: 0.2 },
 };
 
 const mobilePoses: Record<CharacterZone, Pose> = {
@@ -26,26 +40,32 @@ const mobilePoses: Record<CharacterZone, Pose> = {
   capabilities: { x: -1.5, y: -0.52, scale: 0.52, rotation: 0.3 },
   career: { x: -1.6, y: -0.55, scale: 0.5, rotation: 0.3 },
   work: { x: 1.5, y: -0.55, scale: 0.5, rotation: -0.28 },
+  toolkit: { x: -0.8, y: -0.42, scale: 0.5, rotation: 0.1 },
   contact: { x: -1.4, y: -0.5, scale: 0.52, rotation: 0.26 },
 };
 
 const sectionGaze: Record<CharacterZone, { x: number; y: number }> = {
   hero: { x: 0, y: 0 },
-  about: { x: 0.22, y: -0.03 },
-  capabilities: { x: -0.24, y: -0.05 },
-  career: { x: -0.2, y: 0.05 },
-  work: { x: 0.24, y: 0 },
-  contact: { x: -0.2, y: -0.02 },
+  about: { x: -0.22, y: -0.03 },
+  capabilities: { x: 0.24, y: -0.05 },
+  career: { x: 0.2, y: 0.05 },
+  work: { x: -0.24, y: 0 },
+  toolkit: { x: 0.15, y: 0 },
+  contact: { x: 0.18, y: -0.02 },
 };
 
 const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterProps) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef(activeZone);
   const reducedMotionRef = useRef(reducedMotion);
+  const zoneEntryTimeRef = useRef(performance.now());
+  const transitionPhaseRef = useRef<"gesture" | "neutral" | "traveling">("gesture");
   const [webglUnavailable, setWebglUnavailable] = useState(false);
 
   useEffect(() => {
+    if (activeZone !== zoneRef.current) transitionPhaseRef.current = "neutral";
     zoneRef.current = activeZone;
+    zoneEntryTimeRef.current = performance.now();
   }, [activeZone]);
 
   useEffect(() => {
@@ -435,27 +455,38 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       elbowRing.rotation.x = Math.PI / 2;
       elbow.add(elbowRing);
 
+      const forearmTwistGroup = new THREE.Group();
+      elbow.add(forearmTwistGroup);
+
       const forearm = makeCylinder(0.2, 0.27, 0.62, armor, 8);
       forearm.position.y = -0.48;
-      elbow.add(forearm);
+      forearmTwistGroup.add(forearm);
       const forearmGuard = makePlate(0.34, 0.42, 0.19, armorMid);
       forearmGuard.position.set(0, -0.45, 0.19);
-      elbow.add(forearmGuard);
+      forearmTwistGroup.add(forearmGuard);
 
       const wrist = new THREE.Group();
       wrist.position.y = -0.88;
-      elbow.add(wrist);
+      forearmTwistGroup.add(wrist);
       const wristJoint = makeCylinder(0.13, 0.13, 0.16, orangeMetal, 12);
       wrist.add(wristJoint);
       const hand = makePlate(0.38, 0.3, 0.34, armor);
       hand.position.y = -0.22;
       wrist.add(hand);
+      const fingers: THREE.Group[] = [];
       for (let finger = -1; finger <= 1; finger += 1) {
-        const digit = makePlate(0.07, 0.2, 0.09, armorEdge);
-        digit.position.set(finger * 0.1, -0.42, 0.02);
-        wrist.add(digit);
+        const fingerGroup = new THREE.Group();
+        fingerGroup.position.set(finger * 0.1, -0.32, 0.02);
+        wrist.add(fingerGroup);
+        const digit = makePlate(0.065, 0.2, 0.085, armorEdge);
+        digit.position.y = -0.1;
+        fingerGroup.add(digit);
+        const tip = makePlate(0.055, 0.1, 0.075, armorMid);
+        tip.position.y = -0.22;
+        fingerGroup.add(tip);
+        fingers.push(fingerGroup);
       }
-      return { shoulder, elbow, wrist };
+      return { shoulder, elbow, wrist, forearmTwistGroup, fingers };
     };
 
     const leftArm = createArm(-1);
@@ -525,9 +556,14 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     );
     hologram.add(hologramEdges);
 
+    const floorRingMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff5e00,
+      transparent: true,
+      opacity: 0.5,
+    });
     const floorRing = new THREE.Mesh(
       new THREE.TorusGeometry(1.5, 0.018, 8, 90),
-      new THREE.MeshBasicMaterial({ color: 0xff5e00, transparent: true, opacity: 0.5 }),
+      floorRingMaterial,
     );
     floorRing.rotation.x = Math.PI / 2;
     floorRing.position.y = -2.72;
@@ -593,10 +629,20 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       lLeg:   mkSp(),   rLeg:   mkSp(),
     };
     // Integrate a spring toward target, returns new pos
-    const spring = (s: Sp, target: number, k: number, damp: number, dt: number): number => {
+    const springClamped = (
+      s: Sp,
+      target: number,
+      stiffness: number,
+      damping: number,
+      dt: number,
+      maxPosition: number,
+      maxVelocity: number,
+    ): number => {
       const err = s.pos - target;
-      s.vel += (-k * err - damp * s.vel) * dt;
+      s.vel += (-stiffness * err - damping * s.vel) * dt;
+      s.vel = THREE.MathUtils.clamp(s.vel, -maxVelocity, maxVelocity);
       s.pos += s.vel * dt;
+      s.pos = THREE.MathUtils.clamp(s.pos, -maxPosition, maxPosition);
       return s.pos;
     };
     // Apply an impulse (velocity kick) to a spring
@@ -612,9 +658,9 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const dvy = ny - pointer.y;
       const speed = Math.sqrt(dvx * dvx + dvy * dvy);
 
-      if (speed > 0.004) {
+      if (speed > 0.004 && !reducedMotionRef.current) {
         // Scale impulse — faster swipe = bigger kick
-        const imp = Math.min(speed * 6, 1.4);
+        const imp = Math.min(speed * 6, 0.8);
         // Head wobbles toward swipe direction
         kick(sp.headX, -dvx * imp * 1.8);
         kick(sp.headY, dvy * imp * 1.2);
@@ -643,12 +689,24 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       lastPointerActivity = Number.NEGATIVE_INFINITY;
     };
     const onScroll = () => {
-      const delta = window.scrollY - lastScroll;
-      scrollVelocity += delta * 0.002;
-      // Scroll shakes body
-      kick(sp.torso, delta * 0.003);
-      kick(sp.headY, -delta * 0.002);
+      const rawDelta = window.scrollY - lastScroll;
+      const delta = THREE.MathUtils.clamp(rawDelta, -50, 50);
       lastScroll = window.scrollY;
+      if (reducedMotionRef.current) {
+        scrollVelocity = 0;
+        Object.values(sp).forEach((springState) => {
+          springState.pos = 0;
+          springState.vel = 0;
+        });
+        return;
+      }
+      scrollVelocity = THREE.MathUtils.clamp(
+        scrollVelocity + delta * 0.002,
+        -0.18,
+        0.18,
+      );
+      kick(sp.torso, delta * 0.0015);
+      kick(sp.headY, -delta * 0.001);
     };
     const onContextLost = (event: Event) => {
       event.preventDefault();
@@ -667,6 +725,10 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     window.addEventListener("resize", onResize);
     renderer.domElement.addEventListener("webglcontextlost", onContextLost);
 
+    let previousZone = zoneRef.current;
+    let transitionStartX = root.position.x;
+    let transitionStartY = root.position.y;
+    let transitionStartScale = root.scale.x;
     const clock = new THREE.Clock();
     const render = () => {
       if (document.hidden) {
@@ -680,30 +742,79 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const elapsed = clock.elapsedTime;
       const zone = zoneRef.current;
       const viewportWidth = window.innerWidth;
-      const basePose = (viewportWidth < 800 ? mobilePoses : desktopPoses)[zone];
-      const compactDesktop = viewportWidth >= 800 && viewportWidth < 1180;
+      const basePose = (viewportWidth < 900 ? mobilePoses : desktopPoses)[zone];
+      const compactDesktop = viewportWidth >= 900 && viewportWidth < 1180;
       const targetScale = compactDesktop ? basePose.scale * 0.88 : basePose.scale;
       const targetX = compactDesktop ? basePose.x * 0.72 : basePose.x;
 
       const motion = !reducedMotionRef.current;
+      const now = performance.now();
+      const timeSinceEntry = now - zoneEntryTimeRef.current;
+      let phase = transitionPhaseRef.current;
+      if (zone !== previousZone) {
+        transitionStartX = root.position.x;
+        transitionStartY = root.position.y;
+        transitionStartScale = root.scale.x;
+        previousZone = zone;
+      }
+      if (!motion) {
+        scrollVelocity = 0;
+        Object.values(sp).forEach((springState) => {
+          springState.pos = 0;
+          springState.vel = 0;
+        });
+        phase = "gesture";
+        transitionPhaseRef.current = phase;
+      } else if (phase === "neutral" && timeSinceEntry >= 280) {
+        phase = "traveling";
+        transitionPhaseRef.current = phase;
+      } else if (phase === "traveling" && timeSinceEntry >= 700) {
+        phase = "gesture";
+        transitionPhaseRef.current = phase;
+      }
       // Slow breathing idle oscillation
       const idle  = motion ? Math.sin(elapsed * 1.35) * 0.045 : 0;
       const breathe = motion ? Math.sin(elapsed * 1.6) * 0.008 : 0;
 
       // ── Root pose ─────────────────────────────────────────────────────────
-      root.position.x = THREE.MathUtils.damp(root.position.x, targetX, 3.1, delta);
-      root.position.y = THREE.MathUtils.damp(root.position.y, basePose.y + idle, 3.1, delta);
+      if (!motion) {
+        root.position.x = targetX;
+        root.position.y = basePose.y;
+        root.scale.setScalar(targetScale);
+      } else if (phase === "neutral") {
+        root.position.x = transitionStartX;
+        root.position.y = transitionStartY;
+        root.scale.setScalar(transitionStartScale);
+      } else if (phase === "traveling") {
+        const progress = THREE.MathUtils.clamp((timeSinceEntry - 280) / 420, 0, 1);
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        root.position.x = THREE.MathUtils.lerp(transitionStartX, targetX, easedProgress);
+        root.position.y = THREE.MathUtils.lerp(
+          transitionStartY,
+          basePose.y + idle,
+          easedProgress,
+        );
+        root.scale.setScalar(
+          THREE.MathUtils.lerp(transitionStartScale, targetScale, easedProgress),
+        );
+      } else {
+        root.position.x = THREE.MathUtils.damp(root.position.x, targetX, 3.1, delta);
+        root.position.y = THREE.MathUtils.damp(
+          root.position.y,
+          basePose.y + idle,
+          3.1,
+          delta,
+        );
+        root.scale.setScalar(
+          THREE.MathUtils.damp(root.scale.x, targetScale, 3.2, delta),
+        );
+      }
+      const torsoSpring = springClamped(sp.torso, 0, 14, 7.5, delta, 0.3, 1.5);
       root.rotation.y = THREE.MathUtils.damp(
         root.rotation.y,
-        basePose.rotation + scrollVelocity + spring(sp.torso, 0, 14, 4.5, delta) * 0.18,
+        basePose.rotation + scrollVelocity + torsoSpring * 0.18,
         3.5, delta,
       );
-      root.rotation.z = THREE.MathUtils.damp(
-        root.rotation.z,
-        motion ? Math.sin(elapsed * 0.72) * 0.008 : 0,
-        3.5, delta,
-      );
-      root.scale.setScalar(THREE.MathUtils.damp(root.scale.x, targetScale, 3.2, delta));
       // Torso breathe + spring sway
       torso.scale.set(1 + breathe, 1 + breathe, 1 + breathe);
       torso.rotation.y = motion ? Math.sin(elapsed * 0.82) * 0.018 : 0;
@@ -713,23 +824,31 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const pointerIsActive = motion && performance.now() - lastPointerActivity < 1800;
       const automaticGaze = sectionGaze[zone];
       const gazeX = pointerIsActive
-        ? -pointer.x * 0.36
+        ? pointer.x * 0.36
         : automaticGaze.x + (motion ? Math.sin(elapsed * 0.55) * 0.045 : 0);
       const gazeY = pointerIsActive
         ? -pointer.y * 0.17
         : automaticGaze.y + (motion ? Math.sin(elapsed * 0.8) * 0.018 : 0);
 
       // Spring physics add on top of gaze target
-      const headSpX = spring(sp.headX, 0, 16, 5.5, delta);
-      const headSpY = spring(sp.headY, 0, 16, 5.5, delta);
-      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, gazeX + headSpX * 0.4, 11, delta);
-      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, gazeY + headSpY * 0.25, 11, delta);
+      const headSpX = springClamped(sp.headX, 0, 16, 8, delta, 0.45, 2);
+      const headSpY = springClamped(sp.headY, 0, 16, 8, delta, 0.45, 2);
+      head.rotation.y = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(head.rotation.y, gazeX + headSpX * 0.4, 7, delta),
+        -0.55,
+        0.55,
+      );
+      head.rotation.x = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(head.rotation.x, gazeY + headSpY * 0.25, 7, delta),
+        -0.35,
+        0.35,
+      );
       // ⚠️ CRITICAL: add to base y=2.7, never zero it out
       const headBob = motion ? Math.sin(elapsed * 1.35 + 0.4) * 0.018 : 0;
       head.position.y = 2.7 + headBob + headSpY * 0.04;
 
       // ── Eyes & blink ──────────────────────────────────────────────────────
-      const pupilX = pointerIsActive ? -pointer.x * 0.025 : automaticGaze.x * 0.035;
+      const pupilX = pointerIsActive ? pointer.x * 0.025 : automaticGaze.x * 0.035;
       const pupilY = pointerIsActive ? pointer.y * 0.018 : -automaticGaze.y * 0.025;
       leftEye.pupil.position.x  = THREE.MathUtils.damp(leftEye.pupil.position.x,  pupilX, 14, delta);
       leftEye.pupil.position.y  = THREE.MathUtils.damp(leftEye.pupil.position.y,  pupilY, 14, delta);
@@ -747,72 +866,239 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       let leftWristTarget = 0, rightWristTarget = 0;
       let armDepth = motion ? Math.sin(elapsed * 0.7) * 0.018 : 0;
 
-      const heroGreeting = zone === "hero" && motion && elapsed % 9 < 3.2;
+      const heroGreeting =
+        zone === "hero" && motion && phase === "gesture" && timeSinceEntry < 3200;
+      const contactWaveActive =
+        zone === "contact" && motion && phase === "gesture" && timeSinceEntry > 400;
       if (heroGreeting) {
-        rightShoulderTarget = 1.82; rightElbowTarget = -0.52;
-        rightWristTarget = Math.sin(elapsed * 6.5) * 0.5; armDepth = -0.12;
+        rightShoulderTarget = 0.92; rightElbowTarget = -0.38;
+        rightWristTarget = Math.sin(elapsed * 6.5) * 0.28; armDepth = -0.1;
       } else if (zone === "about") {
         leftShoulderTarget = -1.08; leftElbowTarget = 0.48;
         leftWristTarget = -0.18; armDepth = 0.08;
       } else if (zone === "capabilities") {
-        leftShoulderTarget = 0.38; rightShoulderTarget = 1.02;
-        leftElbowTarget  = motion ? Math.sin(elapsed * 7) * 0.14 - 0.42 : -0.42;
-        rightElbowTarget = motion ? -Math.sin(elapsed * 7) * 0.14 - 0.62 : -0.62;
-        leftWristTarget  = motion ? Math.sin(elapsed * 7) * 0.1 : 0;
-        rightWristTarget = motion ? -Math.sin(elapsed * 7) * 0.1 : 0;
-        armDepth = -0.16;
+        rightShoulderTarget = 0.95; rightElbowTarget = -0.52;
+        rightWristTarget = 0.12; armDepth = -0.1;
       } else if (zone === "career") {
-        leftShoulderTarget = -0.96; leftElbowTarget = 0.42; leftWristTarget = -0.12;
+        rightShoulderTarget = 0.82; rightElbowTarget = -0.42;
+        rightWristTarget = 0.1; armDepth = -0.07;
       } else if (zone === "work") {
-        rightShoulderTarget = 1.06; rightElbowTarget = -0.46;
-        rightWristTarget = 0.12; armDepth = -0.08;
+        leftShoulderTarget = -0.78; leftElbowTarget = 0.4;
+        leftWristTarget = -0.12; armDepth = 0.08;
+      } else if (zone === "toolkit") {
+        leftShoulderTarget = -0.55; leftElbowTarget = 0.35;
+        leftWristTarget = -0.08;
+        rightShoulderTarget = 0.48; rightElbowTarget = -0.3;
+        rightWristTarget = 0.06; armDepth = -0.04;
       } else if (zone === "contact") {
-        leftShoulderTarget = -2.05; leftElbowTarget = 0.46;
-        leftWristTarget = motion ? Math.sin(elapsed * 5.4) * 0.48 : -0.12;
+        rightShoulderTarget = 0.92; rightElbowTarget = -0.38;
+        rightWristTarget = contactWaveActive ? Math.sin(elapsed * 5.4) * 0.28 : 0.08;
         armDepth = -0.1;
       }
 
+      const gestureBlend =
+        phase === "gesture"
+          ? timeSinceEntry < 700
+            ? 1
+            : THREE.MathUtils.clamp((timeSinceEntry - 700) / 400, 0, 1)
+          : 0;
+      const leftShoulderRest = -0.06;
+      const rightShoulderRest = 0.06;
+      leftShoulderTarget = THREE.MathUtils.lerp(
+        leftShoulderRest,
+        leftShoulderTarget,
+        gestureBlend,
+      );
+      rightShoulderTarget = THREE.MathUtils.lerp(
+        rightShoulderRest,
+        rightShoulderTarget,
+        gestureBlend,
+      );
+      leftElbowTarget *= gestureBlend;
+      rightElbowTarget *= gestureBlend;
+      leftWristTarget *= gestureBlend;
+      rightWristTarget *= gestureBlend;
+      armDepth *= gestureBlend;
+
+      const torsoCounterLean = !motion
+        ? 0
+        : rightShoulderTarget > 0.7
+          ? 0.045
+          : leftShoulderTarget < -0.7
+            ? -0.045
+            : 0;
+      root.rotation.z = THREE.MathUtils.damp(
+        root.rotation.z,
+        (motion ? Math.sin(elapsed * 0.72) * 0.008 : 0) + torsoCounterLean,
+        3.5,
+        delta,
+      );
+
       // ── Physics springs added on top of zone targets ───────────────────────
-      // Spring stiffness=20, damping=5 for snappy but bouncy joints
-      const lsz = spring(sp.lShoulderZ, 0, 20, 5, delta);
-      const rsz = spring(sp.rShoulderZ, 0, 20, 5, delta);
-      const lsx = spring(sp.lShoulderX, 0, 18, 5, delta);
-      const rsx = spring(sp.rShoulderX, 0, 18, 5, delta);
-      const lez = spring(sp.lElbow,     0, 22, 5.5, delta);
-      const rez = spring(sp.rElbow,     0, 22, 5.5, delta);
-      const lwz = spring(sp.lWrist,     0, 26, 6, delta);
-      const rwz = spring(sp.rWrist,     0, 26, 6, delta);
-      const llx = spring(sp.lLeg,       0, 18, 5, delta);
-      const rlx = spring(sp.rLeg,       0, 18, 5, delta);
+      const lsz = springClamped(sp.lShoulderZ, 0, 20, 8, delta, 0.55, 2.5);
+      const rsz = springClamped(sp.rShoulderZ, 0, 20, 8, delta, 0.55, 2.5);
+      const lsx = springClamped(sp.lShoulderX, 0, 18, 7.5, delta, 0.4, 2);
+      const rsx = springClamped(sp.rShoulderX, 0, 18, 7.5, delta, 0.4, 2);
+      const lez = springClamped(sp.lElbow, 0, 22, 8, delta, 0.45, 2);
+      const rez = springClamped(sp.rElbow, 0, 22, 8, delta, 0.45, 2);
+      const lwz = springClamped(sp.lWrist, 0, 26, 8, delta, 0.35, 1.8);
+      const rwz = springClamped(sp.rWrist, 0, 26, 8, delta, 0.35, 1.8);
+      const llx = springClamped(sp.lLeg, 0, 18, 7, delta, 0.2, 1);
+      const rlx = springClamped(sp.rLeg, 0, 18, 7, delta, 0.2, 1);
 
       // Gravity droop on arms — forearms hang naturally
       const gravityDroop = motion ? 0.06 : 0;
 
-      leftArm.shoulder.rotation.z = THREE.MathUtils.damp(
-        leftArm.shoulder.rotation.z, leftShoulderTarget + lsz * 0.55, 5, delta);
-      rightArm.shoulder.rotation.z = THREE.MathUtils.damp(
-        rightArm.shoulder.rotation.z, rightShoulderTarget + rsz * 0.55, 5, delta);
-      leftArm.elbow.rotation.z = THREE.MathUtils.damp(
-        leftArm.elbow.rotation.z, leftElbowTarget + lez * 0.45 + gravityDroop, 6, delta);
-      rightArm.elbow.rotation.z = THREE.MathUtils.damp(
-        rightArm.elbow.rotation.z, rightElbowTarget + rez * 0.45 - gravityDroop, 6, delta);
-      leftArm.shoulder.rotation.x = THREE.MathUtils.damp(
-        leftArm.shoulder.rotation.x, armDepth + lsx * 0.35, 7, delta);
-      rightArm.shoulder.rotation.x = THREE.MathUtils.damp(
-        rightArm.shoulder.rotation.x, -armDepth + rsx * 0.35, 7, delta);
-      leftArm.wrist.rotation.z = THREE.MathUtils.damp(
-        leftArm.wrist.rotation.z, leftWristTarget + lwz * 0.7, 10, delta);
-      rightArm.wrist.rotation.z = THREE.MathUtils.damp(
-        rightArm.wrist.rotation.z, rightWristTarget + rwz * 0.7, 6, delta);
+      leftArm.shoulder.rotation.z = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          leftArm.shoulder.rotation.z,
+          leftShoulderTarget + lsz * 0.55,
+          5,
+          delta,
+        ),
+        -2.3,
+        2.3,
+      );
+      rightArm.shoulder.rotation.z = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          rightArm.shoulder.rotation.z,
+          rightShoulderTarget + rsz * 0.55,
+          5,
+          delta,
+        ),
+        -2.3,
+        2.3,
+      );
+      leftArm.elbow.rotation.z = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          leftArm.elbow.rotation.z,
+          leftElbowTarget + lez * 0.45 + gravityDroop,
+          6,
+          delta,
+        ),
+        -1.4,
+        1.4,
+      );
+      rightArm.elbow.rotation.z = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          rightArm.elbow.rotation.z,
+          rightElbowTarget + rez * 0.45 - gravityDroop,
+          6,
+          delta,
+        ),
+        -1.4,
+        1.4,
+      );
+      leftArm.shoulder.rotation.x = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          leftArm.shoulder.rotation.x,
+          armDepth + lsx * 0.35,
+          7,
+          delta,
+        ),
+        -0.6,
+        0.6,
+      );
+      rightArm.shoulder.rotation.x = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          rightArm.shoulder.rotation.x,
+          -armDepth + rsx * 0.35,
+          7,
+          delta,
+        ),
+        -0.6,
+        0.6,
+      );
+      leftArm.wrist.rotation.z = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          leftArm.wrist.rotation.z,
+          leftWristTarget + lwz * 0.7,
+          8,
+          delta,
+        ),
+        -0.65,
+        0.65,
+      );
+      rightArm.wrist.rotation.z = THREE.MathUtils.clamp(
+        THREE.MathUtils.damp(
+          rightArm.wrist.rotation.z,
+          rightWristTarget + rwz * 0.7,
+          8,
+          delta,
+        ),
+        -0.65,
+        0.65,
+      );
 
       // Legs — subtle sway with spring
+      let leftFingerCurl = 0.14;
+      let rightFingerCurl = 0.14;
+      let leftForearmTwist = 0;
+      let rightForearmTwist = 0;
+      if (zone === "about" || zone === "work") {
+        leftFingerCurl = 0.06;
+        leftForearmTwist = -0.12;
+      }
+      if (
+        heroGreeting ||
+        contactWaveActive ||
+        zone === "capabilities" ||
+        zone === "career"
+      ) {
+        rightFingerCurl = 0.04;
+        rightForearmTwist = 0.14;
+      }
+      if (zone === "toolkit") {
+        leftFingerCurl = 0.08;
+        rightFingerCurl = 0.08;
+        leftForearmTwist = -0.08;
+        rightForearmTwist = 0.08;
+      }
+      leftFingerCurl *= gestureBlend;
+      rightFingerCurl *= gestureBlend;
+      leftForearmTwist *= gestureBlend;
+      rightForearmTwist *= gestureBlend;
+      leftArm.fingers.forEach((finger) => {
+        finger.rotation.x = THREE.MathUtils.damp(
+          finger.rotation.x,
+          leftFingerCurl,
+          6,
+          delta,
+        );
+      });
+      rightArm.fingers.forEach((finger) => {
+        finger.rotation.x = THREE.MathUtils.damp(
+          finger.rotation.x,
+          rightFingerCurl,
+          6,
+          delta,
+        );
+      });
+      leftArm.forearmTwistGroup.rotation.y = THREE.MathUtils.damp(
+        leftArm.forearmTwistGroup.rotation.y,
+        leftForearmTwist,
+        5,
+        delta,
+      );
+      rightArm.forearmTwistGroup.rotation.y = THREE.MathUtils.damp(
+        rightArm.forearmTwistGroup.rotation.y,
+        rightForearmTwist,
+        5,
+        delta,
+      );
+
       const baseL = motion ? Math.sin(elapsed * 1.2) * 0.014 : 0;
       const baseR = motion ? -Math.sin(elapsed * 1.2) * 0.014 : 0;
       leftLeg.rotation.x  = baseL + llx * 0.12;
       rightLeg.rotation.x = baseR + rlx * 0.12;
 
       // ── FX ────────────────────────────────────────────────────────────────
-      const hologramOpacity = zone === "capabilities" || zone === "work" ? 0.18 : 0;
+      const hologramOpacity =
+        phase === "gesture" &&
+        timeSinceEntry > 600 &&
+        (zone === "capabilities" || zone === "work" || zone === "toolkit")
+          ? 0.18
+          : 0;
       hologramMaterial.opacity = THREE.MathUtils.damp(hologramMaterial.opacity, hologramOpacity, 4, delta);
       const edgeMaterial = hologramEdges.material as THREE.LineBasicMaterial;
       edgeMaterial.opacity = THREE.MathUtils.damp(edgeMaterial.opacity, hologramOpacity * 3.2, 4, delta);
@@ -821,6 +1107,19 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       reactorOrangeRing.rotation.z -= motion ? delta * 0.2 : 0;
       reactorLight.intensity = 16 + (motion ? Math.sin(elapsed * 2.4) * 2.5 : 0);
       floorRing.rotation.z  += motion ? delta * 0.15 : 0;
+      const travelEffect = motion && phase === "traveling";
+      const floorRingScale = travelEffect
+        ? 1 + Math.abs(Math.sin(timeSinceEntry * 0.015)) * 0.25
+        : 1;
+      floorRing.scale.setScalar(
+        THREE.MathUtils.damp(floorRing.scale.x, floorRingScale, 8, delta),
+      );
+      floorRingMaterial.opacity = THREE.MathUtils.damp(
+        floorRingMaterial.opacity,
+        travelEffect ? 0.82 : 0.5,
+        8,
+        delta,
+      );
       particles.rotation.y  += motion ? delta * 0.025 : 0;
 
       renderer.render(scene, camera);
@@ -879,4 +1178,3 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
 
 export type { CharacterZone };
 export default ProceduralCharacter;
-
