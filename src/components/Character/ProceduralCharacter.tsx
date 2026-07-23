@@ -8,22 +8,25 @@ interface ProceduralCharacterProps {
   reducedMotion: boolean;
 }
 
-const desktopPoses: Record<CharacterZone, { x: number; y: number; scale: number; rotation: number }> = {
-  hero: { x: 0, y: -1.7, scale: 1.05, rotation: 0 },
-  about: { x: 3.35, y: -1.75, scale: 0.88, rotation: -0.32 },
-  capabilities: { x: -3.45, y: -1.8, scale: 0.76, rotation: 0.42 },
-  career: { x: 3.75, y: -2.05, scale: 0.68, rotation: -0.4 },
-  work: { x: -3.8, y: -2.1, scale: 0.62, rotation: 0.42 },
-  contact: { x: 3.45, y: -1.95, scale: 0.72, rotation: -0.35 },
+type Pose = { x: number; y: number; scale: number; rotation: number };
+type RobotArm = { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group };
+
+const desktopPoses: Record<CharacterZone, Pose> = {
+  hero: { x: 0, y: -1.72, scale: 0.98, rotation: 0 },
+  about: { x: 3.35, y: -1.78, scale: 0.82, rotation: -0.3 },
+  capabilities: { x: -3.45, y: -1.82, scale: 0.72, rotation: 0.4 },
+  career: { x: 3.75, y: -2.02, scale: 0.64, rotation: -0.38 },
+  work: { x: -3.78, y: -2.08, scale: 0.6, rotation: 0.4 },
+  contact: { x: 3.42, y: -1.96, scale: 0.68, rotation: -0.34 },
 };
 
-const mobilePoses: Record<CharacterZone, { x: number; y: number; scale: number; rotation: number }> = {
-  hero: { x: 0, y: -2.15, scale: 0.72, rotation: 0 },
-  about: { x: 1.45, y: -2.35, scale: 0.48, rotation: -0.35 },
-  capabilities: { x: -1.5, y: -2.45, scale: 0.42, rotation: 0.4 },
-  career: { x: 1.6, y: -2.5, scale: 0.38, rotation: -0.35 },
-  work: { x: -1.55, y: -2.5, scale: 0.36, rotation: 0.38 },
-  contact: { x: 1.45, y: -2.45, scale: 0.4, rotation: -0.3 },
+const mobilePoses: Record<CharacterZone, Pose> = {
+  hero: { x: 0, y: -2.12, scale: 0.68, rotation: 0 },
+  about: { x: 1.45, y: -2.34, scale: 0.45, rotation: -0.33 },
+  capabilities: { x: -1.48, y: -2.42, scale: 0.4, rotation: 0.38 },
+  career: { x: 1.58, y: -2.48, scale: 0.36, rotation: -0.34 },
+  work: { x: -1.52, y: -2.48, scale: 0.35, rotation: 0.36 },
+  contact: { x: 1.42, y: -2.42, scale: 0.38, rotation: -0.28 },
 };
 
 const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterProps) => {
@@ -60,109 +63,323 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.08;
+    renderer.shadowMap.enabled = window.innerWidth >= 800;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.setAttribute("aria-hidden", "true");
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 0.5, 11);
+    const camera = new THREE.PerspectiveCamera(32, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0.55, 11.5);
 
     const root = new THREE.Group();
     scene.add(root);
 
-    const orange = new THREE.MeshStandardMaterial({
-      color: 0xff6500,
-      roughness: 0.28,
+    const armor = new THREE.MeshPhysicalMaterial({
+      color: 0x1b1d20,
+      metalness: 0.92,
+      roughness: 0.3,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.25,
+    });
+    const armorDark = new THREE.MeshStandardMaterial({
+      color: 0x070809,
+      metalness: 0.9,
+      roughness: 0.36,
+    });
+    const armorMid = new THREE.MeshPhysicalMaterial({
+      color: 0x33363a,
+      metalness: 0.9,
+      roughness: 0.26,
+      clearcoat: 0.3,
+    });
+    const armorEdge = new THREE.MeshStandardMaterial({
+      color: 0x50545a,
+      metalness: 0.95,
+      roughness: 0.22,
+    });
+    const jointMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0c0d0f,
       metalness: 0.72,
+      roughness: 0.52,
+    });
+    const orangeMetal = new THREE.MeshStandardMaterial({
+      color: 0xe94f00,
+      emissive: 0x7a1600,
+      emissiveIntensity: 0.35,
+      metalness: 0.82,
+      roughness: 0.24,
     });
     const orangeGlow = new THREE.MeshStandardMaterial({
-      color: 0xff8a2b,
-      emissive: 0xff4d00,
-      emissiveIntensity: 2.4,
-      roughness: 0.2,
-      metalness: 0.4,
+      color: 0xffb05d,
+      emissive: 0xff4b00,
+      emissiveIntensity: 4,
+      roughness: 0.14,
+      metalness: 0.25,
     });
-    const graphite = new THREE.MeshStandardMaterial({
-      color: 0x111218,
-      roughness: 0.4,
-      metalness: 0.8,
-    });
-    const screenMaterial = new THREE.MeshStandardMaterial({
-      color: 0x160b05,
-      emissive: 0xff5e00,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
-      metalness: 0.65,
+    const orangeGlass = new THREE.MeshPhysicalMaterial({
+      color: 0xff7a19,
+      emissive: 0xff3d00,
+      emissiveIntensity: 2.9,
+      metalness: 0.15,
+      roughness: 0.08,
+      transmission: 0.12,
+      thickness: 0.5,
+      clearcoat: 1,
     });
 
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.75, 0.78), graphite);
-    torso.position.y = 1.15;
+    const applyShadow = (mesh: THREE.Mesh) => {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    };
+
+    const makeCylinder = (
+      radiusTop: number,
+      radiusBottom: number,
+      height: number,
+      material: THREE.Material,
+      segments = 12,
+    ) => applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments), material));
+
+    const makePlate = (
+      width: number,
+      height: number,
+      depth: number,
+      material: THREE.Material,
+    ) => applyShadow(new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material));
+
+    const addFrontCylinder = (
+      parent: THREE.Object3D,
+      radius: number,
+      depth: number,
+      material: THREE.Material,
+      z: number,
+      segments = 24,
+    ) => {
+      const mesh = makeCylinder(radius, radius, depth, material, segments);
+      mesh.rotation.x = Math.PI / 2;
+      mesh.position.z = z;
+      parent.add(mesh);
+      return mesh;
+    };
+
+    // Layered upper torso: a broad, faceted silhouette matching the social-preview robot.
+    const torso = new THREE.Group();
+    torso.position.y = 1.08;
     root.add(torso);
 
-    const chest = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.72, 0.08), screenMaterial);
-    chest.position.set(0, 1.28, 0.43);
-    root.add(chest);
+    const ribCage = applyShadow(new THREE.Mesh(new THREE.DodecahedronGeometry(1.03, 0), armor));
+    ribCage.scale.set(1.08, 1.04, 0.72);
+    torso.add(ribCage);
 
-    const chestCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), orangeGlow);
-    chestCore.position.set(0, 1.28, 0.52);
-    root.add(chestCore);
+    const sternum = makePlate(0.72, 1.35, 0.16, armorMid);
+    sternum.position.set(0, 0.02, 0.7);
+    sternum.rotation.z = Math.PI / 4;
+    torso.add(sternum);
 
-    const waist = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.62, 0.46, 8), orange);
-    waist.position.y = 0.06;
+    const leftChestPlate = makePlate(0.74, 0.78, 0.13, armorMid);
+    leftChestPlate.position.set(-0.51, 0.31, 0.66);
+    leftChestPlate.rotation.z = -0.18;
+    torso.add(leftChestPlate);
+    const rightChestPlate = leftChestPlate.clone();
+    rightChestPlate.position.x = 0.51;
+    rightChestPlate.rotation.z = 0.18;
+    torso.add(rightChestPlate);
+
+    [-1, 1].forEach((side) => {
+      const lowerPlate = makePlate(0.48, 0.52, 0.1, armor);
+      lowerPlate.position.set(side * 0.45, -0.5, 0.65);
+      lowerPlate.rotation.z = side * 0.2;
+      torso.add(lowerPlate);
+
+      const accent = makePlate(0.04, 0.52, 0.025, orangeMetal);
+      accent.position.set(side * 0.73, 0.2, 0.76);
+      accent.rotation.z = side * 0.12;
+      torso.add(accent);
+    });
+
+    // Concentric, orange chest reactor.
+    const reactor = new THREE.Group();
+    reactor.position.set(0, 0.04, 0.72);
+    torso.add(reactor);
+    addFrontCylinder(reactor, 0.39, 0.13, armorDark, 0, 12);
+    const reactorOuter = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.055, 8, 12), armorEdge);
+    reactorOuter.position.z = 0.09;
+    reactor.add(reactorOuter);
+    const reactorOrangeRing = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.04, 8, 20), orangeMetal);
+    reactorOrangeRing.position.z = 0.125;
+    reactor.add(reactorOrangeRing);
+    const chestCore = addFrontCylinder(reactor, 0.17, 0.09, orangeGlass, 0.16, 12);
+    const coreHex = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.07, 6), orangeGlow));
+    coreHex.rotation.x = Math.PI / 2;
+    coreHex.position.z = 0.225;
+    reactor.add(coreHex);
+    const reactorLight = new THREE.PointLight(0xff4d00, 5.5, 3.8);
+    reactorLight.position.set(0, 0, 0.75);
+    torso.add(reactorLight);
+
+    // Armored waist and visible mechanical spine.
+    const spine = makeCylinder(0.26, 0.34, 0.55, jointMaterial, 12);
+    spine.position.y = 0.02;
+    root.add(spine);
+    for (let index = 0; index < 3; index += 1) {
+      const spineRing = new THREE.Mesh(new THREE.TorusGeometry(0.3 - index * 0.015, 0.028, 6, 16), armorEdge);
+      spineRing.rotation.x = Math.PI / 2;
+      spineRing.position.y = 0.2 - index * 0.19;
+      root.add(spineRing);
+    }
+    const waist = makeCylinder(0.48, 0.62, 0.38, armor, 8);
+    waist.position.y = -0.28;
     root.add(waist);
+    const beltCore = makePlate(0.38, 0.22, 0.17, orangeMetal);
+    beltCore.position.set(0, -0.25, 0.55);
+    root.add(beltCore);
 
-    const head = new THREE.Group();
-    head.position.y = 2.55;
-    root.add(head);
-
-    const helmet = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.9, 0.9), graphite);
-    head.add(helmet);
-    const face = new THREE.Mesh(new THREE.BoxGeometry(0.93, 0.5, 0.06), screenMaterial);
-    face.position.z = 0.48;
-    head.add(face);
-
-    const eyeGeometry = new THREE.BoxGeometry(0.23, 0.075, 0.04);
-    const leftEye = new THREE.Mesh(eyeGeometry, orangeGlow);
-    const rightEye = new THREE.Mesh(eyeGeometry, orangeGlow);
-    leftEye.position.set(-0.25, 0.07, 0.53);
-    rightEye.position.set(0.25, 0.07, 0.53);
-    head.add(leftEye, rightEye);
-
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.48, 8), orange);
-    antenna.position.set(0.34, 0.65, 0);
-    antenna.rotation.z = -0.15;
-    head.add(antenna);
-    const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 12), orangeGlow);
-    antennaTip.position.set(0.38, 0.91, 0);
-    head.add(antennaTip);
-
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.38, 10), orange);
+    // Short mechanical neck with illuminated collar segments.
+    const neck = makeCylinder(0.22, 0.27, 0.42, jointMaterial, 12);
     neck.position.y = 2.02;
     root.add(neck);
+    [-0.11, 0.11].forEach((offset) => {
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.035, 6, 18), offset > 0 ? orangeMetal : armorEdge);
+      collar.rotation.x = Math.PI / 2;
+      collar.position.y = 2.02 + offset;
+      root.add(collar);
+    });
 
-    const createArm = (side: -1 | 1) => {
+    // Faceted helmet with temple housings, circular camera eyes, and a subtle mouth light.
+    const head = new THREE.Group();
+    head.position.y = 2.7;
+    root.add(head);
+
+    const helmet = applyShadow(new THREE.Mesh(new THREE.DodecahedronGeometry(0.72, 0), armor));
+    helmet.scale.set(0.94, 1.03, 0.82);
+    head.add(helmet);
+
+    const crown = makePlate(0.58, 0.3, 0.12, armorMid);
+    crown.position.set(0, 0.47, 0.31);
+    crown.rotation.x = -0.28;
+    head.add(crown);
+
+    const facePlate = makePlate(0.9, 0.52, 0.12, armorMid);
+    facePlate.position.set(0, -0.02, 0.59);
+    head.add(facePlate);
+
+    const chin = makePlate(0.55, 0.22, 0.18, armorDark);
+    chin.position.set(0, -0.43, 0.48);
+    chin.rotation.x = -0.2;
+    head.add(chin);
+
+    [-1, 1].forEach((side) => {
+      const cheek = makePlate(0.25, 0.4, 0.11, armor);
+      cheek.position.set(side * 0.42, -0.19, 0.56);
+      cheek.rotation.z = side * 0.22;
+      head.add(cheek);
+
+      const temple = makeCylinder(0.24, 0.24, 0.18, armorDark, 18);
+      temple.rotation.z = Math.PI / 2;
+      temple.position.set(side * 0.69, 0.02, 0);
+      head.add(temple);
+      const templeRing = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.035, 8, 20), orangeMetal);
+      templeRing.rotation.y = Math.PI / 2;
+      templeRing.position.set(side * 0.79, 0.02, 0);
+      head.add(templeRing);
+    });
+
+    const createEye = (side: -1 | 1) => {
+      const eye = new THREE.Group();
+      eye.position.set(side * 0.25, 0.07, 0.68);
+      head.add(eye);
+      addFrontCylinder(eye, 0.15, 0.07, armorDark, 0, 20);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.022, 8, 24), orangeMetal);
+      rim.position.z = 0.055;
+      eye.add(rim);
+      const lens = addFrontCylinder(eye, 0.08, 0.045, orangeGlass, 0.075, 24);
+      const pupil = addFrontCylinder(eye, 0.035, 0.025, orangeGlow, 0.108, 18);
+      const eyeLight = new THREE.PointLight(0xff5e00, 0.8, 1.2);
+      eyeLight.position.z = 0.35;
+      eye.add(eyeLight);
+      return { eye, lens, pupil };
+    };
+
+    const leftEye = createEye(-1);
+    const rightEye = createEye(1);
+
+    const brow = makePlate(0.56, 0.05, 0.035, armorDark);
+    brow.position.set(0, 0.27, 0.68);
+    head.add(brow);
+    const browMark = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.025, 3), orangeMetal));
+    browMark.rotation.x = Math.PI / 2;
+    browMark.rotation.z = Math.PI;
+    browMark.position.set(0, 0.37, 0.68);
+    head.add(browMark);
+
+    const mouthLight = makePlate(0.25, 0.025, 0.025, orangeGlow);
+    mouthLight.position.set(0, -0.29, 0.68);
+    head.add(mouthLight);
+
+    const antenna = makeCylinder(0.018, 0.025, 0.55, armorEdge, 8);
+    antenna.position.set(-0.49, 0.63, 0);
+    antenna.rotation.z = 0.08;
+    head.add(antenna);
+    const antennaTip = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 12), orangeGlow));
+    antennaTip.position.set(-0.515, 0.91, 0);
+    head.add(antennaTip);
+
+    const createArm = (side: -1 | 1): RobotArm => {
       const shoulder = new THREE.Group();
-      shoulder.position.set(side * 0.91, 1.7, 0);
+      shoulder.position.set(side * 1.04, 1.58, 0);
       root.add(shoulder);
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.29, 16, 16), orange);
-      cap.scale.x = 0.8;
-      shoulder.add(cap);
-      const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.62, 6, 12), graphite);
-      upper.position.y = -0.51;
+
+      const shoulderJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.33, 16, 12), jointMaterial));
+      shoulder.add(shoulderJoint);
+      const shoulderRing = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.06, 8, 18), orangeMetal);
+      shoulderRing.rotation.y = Math.PI / 2;
+      shoulderRing.position.x = side * 0.02;
+      shoulder.add(shoulderRing);
+      const shoulderCap = applyShadow(new THREE.Mesh(new THREE.DodecahedronGeometry(0.44, 0), armor));
+      shoulderCap.scale.set(1.1, 0.72, 0.78);
+      shoulderCap.position.set(side * 0.14, 0.08, 0);
+      shoulder.add(shoulderCap);
+
+      const upper = makeCylinder(0.22, 0.18, 0.72, armorMid, 8);
+      upper.position.y = -0.55;
       shoulder.add(upper);
+      const upperAccent = makePlate(0.06, 0.5, 0.05, orangeMetal);
+      upperAccent.position.set(side * 0.18, -0.54, 0.18);
+      shoulder.add(upperAccent);
+
       const elbow = new THREE.Group();
       elbow.position.y = -1.02;
       shoulder.add(elbow);
-      const joint = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), orange);
-      elbow.add(joint);
-      const forearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.55, 6, 12), graphite);
-      forearm.position.y = -0.46;
+      const elbowJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), jointMaterial));
+      elbow.add(elbowJoint);
+      const elbowRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 6, 14), orangeMetal);
+      elbowRing.rotation.x = Math.PI / 2;
+      elbow.add(elbowRing);
+
+      const forearm = makeCylinder(0.2, 0.27, 0.62, armor, 8);
+      forearm.position.y = -0.48;
       elbow.add(forearm);
-      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.3), orange);
-      hand.position.y = -0.9;
-      elbow.add(hand);
-      return { shoulder, elbow };
+      const forearmGuard = makePlate(0.34, 0.42, 0.19, armorMid);
+      forearmGuard.position.set(0, -0.45, 0.19);
+      elbow.add(forearmGuard);
+
+      const wrist = new THREE.Group();
+      wrist.position.y = -0.88;
+      elbow.add(wrist);
+      const wristJoint = makeCylinder(0.13, 0.13, 0.16, orangeMetal, 12);
+      wrist.add(wristJoint);
+      const hand = makePlate(0.38, 0.3, 0.34, armor);
+      hand.position.y = -0.22;
+      wrist.add(hand);
+      for (let finger = -1; finger <= 1; finger += 1) {
+        const digit = makePlate(0.07, 0.2, 0.09, armorEdge);
+        digit.position.set(finger * 0.1, -0.42, 0.02);
+        wrist.add(digit);
+      }
+      return { shoulder, elbow, wrist };
     };
 
     const leftArm = createArm(-1);
@@ -170,20 +387,44 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
 
     const createLeg = (side: -1 | 1) => {
       const hip = new THREE.Group();
-      hip.position.set(side * 0.36, -0.15, 0);
+      hip.position.set(side * 0.39, -0.35, 0);
       root.add(hip);
-      const upper = new THREE.Mesh(new THREE.CapsuleGeometry(0.21, 0.78, 6, 12), graphite);
-      upper.position.y = -0.62;
-      hip.add(upper);
-      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), orange);
-      knee.position.y = -1.18;
+
+      const hipJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), jointMaterial));
+      hip.add(hipJoint);
+      const thigh = makeCylinder(0.26, 0.2, 0.85, armorMid, 8);
+      thigh.position.y = -0.62;
+      hip.add(thigh);
+      const thighPlate = makePlate(0.33, 0.55, 0.16, armor);
+      thighPlate.position.set(0, -0.56, 0.22);
+      hip.add(thighPlate);
+
+      const knee = new THREE.Group();
+      knee.position.y = -1.15;
       hip.add(knee);
-      const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.74, 6, 12), graphite);
-      shin.position.y = -1.73;
-      hip.add(shin);
-      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.28, 0.72), orange);
-      foot.position.set(0, -2.25, 0.14);
-      hip.add(foot);
+      const kneeJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), jointMaterial));
+      knee.add(kneeJoint);
+      const kneePlate = applyShadow(new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), orangeMetal));
+      kneePlate.scale.set(0.78, 0.9, 0.55);
+      kneePlate.position.z = 0.23;
+      knee.add(kneePlate);
+
+      const shin = makeCylinder(0.2, 0.25, 0.78, armor, 8);
+      shin.position.y = -0.55;
+      knee.add(shin);
+      const shinGuard = makePlate(0.32, 0.56, 0.16, armorMid);
+      shinGuard.position.set(0, -0.52, 0.22);
+      knee.add(shinGuard);
+
+      const ankle = makeCylinder(0.13, 0.13, 0.17, orangeMetal, 10);
+      ankle.position.y = -1;
+      knee.add(ankle);
+      const foot = makePlate(0.5, 0.28, 0.75, armor);
+      foot.position.set(0, -1.18, 0.17);
+      knee.add(foot);
+      const toe = makePlate(0.42, 0.12, 0.22, orangeMetal);
+      toe.position.set(0, -1.18, 0.58);
+      knee.add(toe);
       return hip;
     };
 
@@ -198,6 +439,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       transparent: true,
       opacity: 0,
       side: THREE.DoubleSide,
+      depthWrite: false,
     });
     const hologramPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.25, 1.32), hologramMaterial);
     hologram.add(hologramPanel);
@@ -212,10 +454,10 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       new THREE.MeshBasicMaterial({ color: 0xff5e00, transparent: true, opacity: 0.5 }),
     );
     floorRing.rotation.x = Math.PI / 2;
-    floorRing.position.y = -2.42;
+    floorRing.position.y = -2.72;
     root.add(floorRing);
 
-    const particlePositions = new Float32Array(75 * 3);
+    const particlePositions = new Float32Array(65 * 3);
     for (let index = 0; index < particlePositions.length; index += 3) {
       particlePositions[index] = (Math.random() - 0.5) * 6;
       particlePositions[index + 1] = (Math.random() - 0.5) * 7;
@@ -227,19 +469,24 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       particleGeometry,
       new THREE.PointsMaterial({
         color: 0xff7a22,
-        size: 0.035,
+        size: 0.03,
         transparent: true,
-        opacity: 0.52,
+        opacity: 0.4,
       }),
     );
     root.add(particles);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 1.1);
-    const key = new THREE.PointLight(0xff6500, 26, 18);
-    key.position.set(3, 4, 5);
-    const fill = new THREE.PointLight(0x596cff, 14, 16);
-    fill.position.set(-4, 2, 3);
-    scene.add(ambient, key, fill);
+    const ambient = new THREE.HemisphereLight(0xd7e0e8, 0x130500, 1.65);
+    const key = new THREE.DirectionalLight(0xffd2b0, 3.2);
+    key.position.set(4, 6, 6);
+    key.castShadow = true;
+    const orangeRim = new THREE.PointLight(0xff4d00, 18, 16);
+    orangeRim.position.set(3.5, 2.5, 4);
+    const coolRim = new THREE.PointLight(0x8aa3b8, 7, 14);
+    coolRim.position.set(-4, 3, 1);
+    const underGlow = new THREE.PointLight(0xff3d00, 6, 7);
+    underGlow.position.set(0, -2.2, 2);
+    scene.add(ambient, key, orangeRim, coolRim, underGlow);
 
     const pointer = new THREE.Vector2();
     let scrollVelocity = 0;
@@ -267,6 +514,7 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = window.innerWidth >= 800;
     };
 
     window.addEventListener("pointermove", onPointerMove, { passive: true });
@@ -283,46 +531,50 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       const delta = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
       const zone = zoneRef.current;
-      const isMobile = window.innerWidth < 800;
-      const pose = (isMobile ? mobilePoses : desktopPoses)[zone];
+      const pose = (window.innerWidth < 800 ? mobilePoses : desktopPoses)[zone];
       const motion = !reducedMotionRef.current;
-      const idle = motion ? Math.sin(elapsed * 1.4) * 0.055 : 0;
+      const idle = motion ? Math.sin(elapsed * 1.35) * 0.045 : 0;
+      const breathe = motion ? Math.sin(elapsed * 1.6) * 0.008 : 0;
 
       root.position.x = THREE.MathUtils.damp(root.position.x, pose.x, 3.1, delta);
       root.position.y = THREE.MathUtils.damp(root.position.y, pose.y + idle, 3.1, delta);
-      root.rotation.y = THREE.MathUtils.damp(
-        root.rotation.y,
-        pose.rotation + scrollVelocity,
-        3.5,
-        delta,
-      );
+      root.rotation.y = THREE.MathUtils.damp(root.rotation.y, pose.rotation + scrollVelocity, 3.5, delta);
       root.scale.setScalar(THREE.MathUtils.damp(root.scale.x, pose.scale, 3.2, delta));
+      torso.scale.set(1 + breathe, 1 + breathe, 1 + breathe);
       scrollVelocity = THREE.MathUtils.damp(scrollVelocity, 0, 6, delta);
 
-      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, motion ? pointer.x * 0.28 : 0, 5, delta);
-      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, motion ? pointer.y * 0.12 : 0, 5, delta);
-      const blink = motion && Math.sin(elapsed * 0.72) > 0.985 ? 0.08 : 1;
-      leftEye.scale.y = blink;
-      rightEye.scale.y = blink;
+      head.rotation.y = THREE.MathUtils.damp(head.rotation.y, motion ? pointer.x * 0.25 : 0, 5, delta);
+      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, motion ? pointer.y * 0.1 : 0, 5, delta);
+      const blink = motion && Math.sin(elapsed * 0.72) > 0.985 ? 0.18 : 1;
+      leftEye.lens.scale.y = blink;
+      leftEye.pupil.scale.y = blink;
+      rightEye.lens.scale.y = blink;
+      rightEye.pupil.scale.y = blink;
 
       let leftShoulderTarget = 0.08;
       let rightShoulderTarget = -0.08;
       let leftElbowTarget = 0;
       let rightElbowTarget = 0;
+      let rightWristTarget = 0;
+
       if (zone === "about") {
-        rightShoulderTarget = -1.2;
-        rightElbowTarget = -0.75;
+        rightShoulderTarget = -1.12;
+        rightElbowTarget = -0.72;
+        rightWristTarget = 0.28;
       } else if (zone === "capabilities") {
-        leftShoulderTarget = -0.7;
-        rightShoulderTarget = 0.7;
-        leftElbowTarget = motion ? Math.sin(elapsed * 8) * 0.2 - 0.7 : -0.7;
-        rightElbowTarget = motion ? -Math.sin(elapsed * 8) * 0.2 + 0.7 : 0.7;
+        leftShoulderTarget = -0.68;
+        rightShoulderTarget = 0.68;
+        leftElbowTarget = motion ? Math.sin(elapsed * 8) * 0.18 - 0.68 : -0.68;
+        rightElbowTarget = motion ? -Math.sin(elapsed * 8) * 0.18 + 0.68 : 0.68;
+      } else if (zone === "career") {
+        rightElbowTarget = -0.3;
       } else if (zone === "work") {
         leftShoulderTarget = -1.02;
-        leftElbowTarget = -0.8;
+        leftElbowTarget = -0.78;
       } else if (zone === "contact") {
-        rightShoulderTarget = -2.35;
-        rightElbowTarget = motion ? Math.sin(elapsed * 5) * 0.38 - 0.45 : -0.45;
+        rightShoulderTarget = -2.25;
+        rightElbowTarget = motion ? Math.sin(elapsed * 5) * 0.34 - 0.42 : -0.42;
+        rightWristTarget = motion ? Math.sin(elapsed * 5) * 0.3 : 0.15;
       }
 
       leftArm.shoulder.rotation.z = THREE.MathUtils.damp(
@@ -349,20 +601,23 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
         6,
         delta,
       );
-      leftLeg.rotation.x = motion ? Math.sin(elapsed * 1.2) * 0.018 : 0;
-      rightLeg.rotation.x = motion ? -Math.sin(elapsed * 1.2) * 0.018 : 0;
-
-      const hologramOpacity = zone === "capabilities" || zone === "work" ? 0.19 : 0;
-      hologramMaterial.opacity = THREE.MathUtils.damp(
-        hologramMaterial.opacity,
-        hologramOpacity,
-        4,
+      rightArm.wrist.rotation.z = THREE.MathUtils.damp(
+        rightArm.wrist.rotation.z,
+        rightWristTarget,
+        6,
         delta,
       );
+      leftLeg.rotation.x = motion ? Math.sin(elapsed * 1.2) * 0.014 : 0;
+      rightLeg.rotation.x = motion ? -Math.sin(elapsed * 1.2) * 0.014 : 0;
+
+      const hologramOpacity = zone === "capabilities" || zone === "work" ? 0.18 : 0;
+      hologramMaterial.opacity = THREE.MathUtils.damp(hologramMaterial.opacity, hologramOpacity, 4, delta);
       const edgeMaterial = hologramEdges.material as THREE.LineBasicMaterial;
       edgeMaterial.opacity = THREE.MathUtils.damp(edgeMaterial.opacity, hologramOpacity * 3.2, 4, delta);
       hologram.rotation.y = motion ? Math.sin(elapsed * 0.7) * 0.08 : 0;
-      chestCore.rotation.y += motion ? delta * 1.4 : 0;
+      chestCore.rotation.y += motion ? delta * 1.2 : 0;
+      reactorOrangeRing.rotation.z -= motion ? delta * 0.2 : 0;
+      reactorLight.intensity = 5.5 + (motion ? Math.sin(elapsed * 2.4) * 0.8 : 0);
       floorRing.rotation.z += motion ? delta * 0.15 : 0;
       particles.rotation.y += motion ? delta * 0.025 : 0;
 
@@ -378,7 +633,11 @@ const ProceduralCharacter = ({ activeZone, reducedMotion }: ProceduralCharacterP
       document.removeEventListener("visibilitychange", onVisibilityChange);
       renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
+        if (
+          object instanceof THREE.Mesh ||
+          object instanceof THREE.Points ||
+          object instanceof THREE.LineSegments
+        ) {
           object.geometry?.dispose();
           const materials = Array.isArray(object.material) ? object.material : [object.material];
           materials.forEach((material) => material.dispose());
