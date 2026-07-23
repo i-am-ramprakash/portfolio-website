@@ -1470,7 +1470,7 @@ main {
   .site-nav {
     position: fixed;
     top: 0;
-    right: -16px;
+    right: 0;
     display: flex;
     width: min(360px, 100vw);
     height: 100svh;
@@ -1789,6 +1789,11 @@ main {
     overflow-x: auto;
     mask-image: none;
   }
+}
+
+.reduced-motion .tech-marquee {
+  overflow-x: auto;
+  mask-image: none;
 }
 
 .reduced-motion .tech-marquee > div {

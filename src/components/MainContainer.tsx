@@ -79,7 +79,7 @@ const MainContainer = () => {
         const zone = visible?.target.getAttribute("data-character-zone") as CharacterZone | null;
         if (zone) setActiveZone(zone);
       },
-      { rootMargin: "-30% 0px -45% 0px", threshold: [0, 0.15, 0.45] },
+      { rootMargin: "-15% 0px -25% 0px", threshold: [0, 0.15, 0.45] },
     );
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
@@ -101,8 +101,11 @@ const MainContainer = () => {
       if (!frame) frame = window.requestAnimationFrame(moveCursor);
     };
     const onPointerOver = (event: PointerEvent) => {
-      const target = event.target as HTMLElement;
-      cursor.classList.toggle("cursor-active", Boolean(target.closest("a, button, input, textarea, summary")));
+      const target = event.target as HTMLElement | null;
+      const isInteractive = Boolean(
+        target && typeof target.closest === "function" && target.closest("a, button, input, textarea, summary"),
+      );
+      cursor.classList.toggle("cursor-active", isInteractive);
     };
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("pointerover", onPointerOver, { passive: true });
@@ -497,11 +500,13 @@ const MainContainer = () => {
             <input
               className="honeypot"
               type="text"
+              name="b_hp_check"
               value={company}
               onChange={(event) => setCompany(event.target.value)}
               tabIndex={-1}
-              autoComplete="off"
+              autoComplete="new-password"
               aria-hidden="true"
+              style={{ display: "none" }}
             />
             <label>
               <span>Your name</span>
