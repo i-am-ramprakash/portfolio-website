@@ -124,12 +124,12 @@ test("renderer quality adapts without shadowing every decorative mesh", () => {
   assert.match(character, /new THREE\.MeshStandardMaterial/);
 });
 
-test("first load renders one silver robot with ready-relative wave timing", () => {
+test("first load renders cartoon polar bear mascot with ready-relative wave timing", () => {
   assert.doesNotMatch(app, /Suspense|character-loading|character-fallback/);
   assert.doesNotMatch(app, /lazy\(\(\) => import/);
-  assert.match(character, /color: 0x929ba4/);
-  assert.match(character, /color: 0xd7dde2/);
-  assert.match(character, /zoneEntryTimeRef\.current = performance\.now\(\);\s*render\(\)/);
+  assert.match(character, /color: 0xf4f0ea/);
+  assert.match(character, /color: 0xff5500/);
+  assert.match(character, /zoneEntryTimeRef\.current = performance\.now\(\);/);
   assert.match(character, /heroWaveTime >= 250 && heroWaveTime < 3600/);
 });
 
@@ -204,12 +204,13 @@ test("editorial section redesign preserves data while reducing visual weight", (
   assert.doesNotMatch(css, /min-height:\s*570px/);
 });
 
-test("social sharing metadata and attribution are present", () => {
+test("social sharing metadata and standard portfolio footer are present", () => {
   assert.match(html, /property="og:image" content="\/og-image-orange\.jpg"/);
   assert.match(html, /name="twitter:image" content="\/og-image-orange\.jpg"/);
   assert.ok(existsSync(new URL("../public/og-image-orange.jpg", import.meta.url)));
   assert.match(html, /application\/ld\+json/);
   assert.match(html, /name="robots" content="index, follow, max-image-preview:large"/);
-  assert.match(app, /Interaction direction inspired by/);
-  assert.match(app, /Moncy Yohannan/);
+  assert.match(app, /RAM PRAKASH SAH/);
+  assert.match(app, /Ram Prakash Sah\. All rights reserved\./);
+  assert.match(app, /Back to top/);
 });

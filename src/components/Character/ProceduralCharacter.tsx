@@ -131,63 +131,64 @@ const ProceduralCharacter = ({
     const root = new THREE.Group();
     scene.add(root);
 
-    // Dark charcoal armor matching og-image-orange.jpg — faceted dark panels with silver metallic sheen on edges
-    const armor = new THREE.MeshStandardMaterial({
-      color: 0x929ba4,
-      metalness: 0.78,
-      roughness: 0.3,
-      envMapIntensity: 1.2,
-    });
-    const armorDark = new THREE.MeshStandardMaterial({
-      color: 0x252b31,
-      metalness: 0.76,
-      roughness: 0.38,
-    });
-    const armorMid = new THREE.MeshStandardMaterial({
-      color: 0x5f6973,
-      metalness: 0.74,
-      roughness: 0.32,
-    });
-    // Silver-tinted edge highlight — catches the orange rim as white-silver specular
-    const armorEdge = new THREE.MeshStandardMaterial({
-      color: 0xd7dde2,
-      metalness: 0.86,
-      roughness: 0.16,
-    });
-    const jointMaterial = new THREE.MeshStandardMaterial({
-      color: 0x070809,
-      metalness: 0.85,
-      roughness: 0.48,
-    });
-    const orangeMetal = new THREE.MeshStandardMaterial({
-      color: 0xff5500,
-      emissive: 0xcc2200,
-      emissiveIntensity: 1.0,
-      metalness: 0.72,
-      roughness: 0.16,
-    });
-    const orangeGlow = new THREE.MeshStandardMaterial({
-      color: 0xff9944,
-      emissive: 0xff5500,
-      emissiveIntensity: 7.0,
-      roughness: 0.05,
+    // Color palette for 3D Cartoon Polar Bear Mascot
+    const furWhite = new THREE.MeshStandardMaterial({
+      color: 0xf4f0ea,
       metalness: 0.08,
+      roughness: 0.65,
     });
-    const pupilGlow = new THREE.MeshStandardMaterial({
-      color: 0xffee99,
-      emissive: 0xff8800,
-      emissiveIntensity: 10,
-      roughness: 0.03,
-    });
-    const orangeGlass = new THREE.MeshPhysicalMaterial({
-      color: 0xff6600,
-      emissive: 0xff4400,
-      emissiveIntensity: 5.5,
+    const furMuzzle = new THREE.MeshStandardMaterial({
+      color: 0xfffaf5,
       metalness: 0.04,
-      roughness: 0.03,
-      transmission: 0.08,
-      thickness: 0.5,
-      clearcoat: 1,
+      roughness: 0.72,
+    });
+    const noseBlack = new THREE.MeshStandardMaterial({
+      color: 0x121215,
+      metalness: 0.5,
+      roughness: 0.12,
+    });
+    const eyeBlack = new THREE.MeshStandardMaterial({
+      color: 0x0c0c0e,
+      emissive: 0x1a0d00,
+      roughness: 0.1,
+    });
+    const glassesFrame = new THREE.MeshStandardMaterial({
+      color: 0xe6a100,
+      metalness: 0.92,
+      roughness: 0.18,
+      envMapIntensity: 1.5,
+    });
+    const glassesLens = new THREE.MeshPhysicalMaterial({
+      color: 0xff6600,
+      emissive: 0xcc3300,
+      emissiveIntensity: 0.4,
+      metalness: 0.12,
+      roughness: 0.05,
+      transmission: 0.7,
+      transparent: true,
+      opacity: 0.85,
+      clearcoat: 1.0,
+    });
+    const scarfOrange = new THREE.MeshStandardMaterial({
+      color: 0xff5500,
+      emissive: 0xaa2200,
+      emissiveIntensity: 0.2,
+      metalness: 0.15,
+      roughness: 0.55,
+    });
+    const suitJacket = new THREE.MeshStandardMaterial({
+      color: 0xede8e1,
+      metalness: 0.18,
+      roughness: 0.42,
+    });
+    const suitGold = new THREE.MeshStandardMaterial({
+      color: 0xf5b000,
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+    const innerEarMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe8d0c0,
+      roughness: 0.8,
     });
 
     const applyShadow = (mesh: THREE.Mesh) => {
@@ -207,7 +208,7 @@ const ProceduralCharacter = ({
       radiusBottom: number,
       height: number,
       material: THREE.Material,
-      segments = 12,
+      segments = 16,
     ) => applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments), material));
 
     const makePlate = (
@@ -217,301 +218,178 @@ const ProceduralCharacter = ({
       material: THREE.Material,
     ) => applyShadow(new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material));
 
-    const addFrontCylinder = (
-      parent: THREE.Object3D,
-      radius: number,
-      depth: number,
-      material: THREE.Material,
-      z: number,
-      segments = 24,
-    ) => {
-      const mesh = makeCylinder(radius, radius, depth, material, segments);
-      mesh.rotation.x = Math.PI / 2;
-      mesh.position.z = z;
-      parent.add(mesh);
-      return mesh;
-    };
-
-    // Strong orange backlight halo behind robot — matches the orange glow in og-image-orange.jpg
-    const backlight = new THREE.PointLight(0xff4d00, 32, 18);
+    // Warm rear backlight halo
+    const backlight = new THREE.PointLight(0xff5500, 32, 18);
     backlight.position.set(0, 1.5, -2.0);
     scene.add(backlight);
 
-    // Torso: Faceted chest armor with seams matching og-image-orange.jpg
+    // Torso: Ivory suit jacket with gold buttons & lapels
     const torso = new THREE.Group();
     torso.position.y = 1.08;
     root.add(torso);
 
-    const ribCage = markMajorShadow(
-      new THREE.Mesh(new THREE.DodecahedronGeometry(1.03, 0), armor),
+    const suitBody = markMajorShadow(
+      new THREE.Mesh(new THREE.DodecahedronGeometry(1.05, 1), suitJacket),
     );
-    ribCage.scale.set(1.08, 1.04, 0.72);
-    torso.add(ribCage);
+    suitBody.scale.set(1.06, 1.05, 0.76);
+    torso.add(suitBody);
 
-    const sternum = makePlate(0.72, 1.35, 0.16, armorMid);
-    sternum.position.set(0, 0.02, 0.7);
-    sternum.rotation.z = Math.PI / 4;
-    torso.add(sternum);
-
-    const leftChestPlate = makePlate(0.74, 0.78, 0.13, armorMid);
-    leftChestPlate.position.set(-0.51, 0.31, 0.66);
-    leftChestPlate.rotation.z = -0.18;
-    torso.add(leftChestPlate);
-    const rightChestPlate = leftChestPlate.clone();
-    rightChestPlate.position.x = 0.51;
-    rightChestPlate.rotation.z = 0.18;
-    torso.add(rightChestPlate);
-
-    [-1, 1].forEach((side) => {
-      const lowerPlate = makePlate(0.48, 0.52, 0.1, armor);
-      lowerPlate.position.set(side * 0.45, -0.5, 0.65);
-      lowerPlate.rotation.z = side * 0.2;
-      torso.add(lowerPlate);
-
-      // Orange power conduit seams running along chest plates
-      const accent = makePlate(0.035, 0.55, 0.03, orangeMetal);
-      accent.position.set(side * 0.73, 0.2, 0.76);
-      accent.rotation.z = side * 0.12;
-      torso.add(accent);
-
-      const chestSeam = makePlate(0.025, 0.6, 0.02, orangeGlow);
-      chestSeam.position.set(side * 0.38, 0.42, 0.74);
-      chestSeam.rotation.z = side * -0.28;
-      torso.add(chestSeam);
-    });
-
-    // Octagonal glowing chest reactor core (exact match to og-image-orange.jpg)
-    const reactor = new THREE.Group();
-    reactor.position.set(0, 0.04, 0.72);
-    torso.add(reactor);
-
-    // Octagonal outer housing
-    const reactorHousing = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.12, 8), armorDark));
-    reactorHousing.rotation.x = Math.PI / 2;
-    reactor.add(reactorHousing);
-
-    const reactorOuter = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.05, 8, 8), armorEdge);
-    reactorOuter.position.z = 0.09;
-    reactor.add(reactorOuter);
-
-    const reactorOrangeRing = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 8, 8), orangeMetal);
-    reactorOrangeRing.position.z = 0.125;
-    reactor.add(reactorOrangeRing);
-
-    const chestCore = addFrontCylinder(reactor, 0.18, 0.09, orangeGlass, 0.16, 8);
-    const coreOctagon = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.07, 8), pupilGlow));
-    coreOctagon.rotation.x = Math.PI / 2;
-    coreOctagon.position.z = 0.225;
-    reactor.add(coreOctagon);
-
-    const reactorLight = new THREE.PointLight(0xff4d00, 16, 5.5);
-    reactorLight.position.set(0, 0, 0.75);
-    torso.add(reactorLight);
-
-    // Armored waist and mechanical spine
-    const spine = makeCylinder(0.26, 0.34, 0.55, jointMaterial, 12);
-    spine.position.y = 0.02;
-    root.add(spine);
     for (let index = 0; index < 3; index += 1) {
-      const spineRing = new THREE.Mesh(new THREE.TorusGeometry(0.3 - index * 0.015, 0.028, 6, 16), armorEdge);
-      spineRing.rotation.x = Math.PI / 2;
-      spineRing.position.y = 0.2 - index * 0.19;
-      root.add(spineRing);
+      const button = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.04, 12), suitGold));
+      button.rotation.x = Math.PI / 2;
+      button.position.set(0, 0.25 - index * 0.28, 0.72);
+      torso.add(button);
     }
-    const waist = makeCylinder(0.48, 0.62, 0.38, armor, 8);
-    waist.position.y = -0.28;
-    root.add(waist);
-    const beltCore = makePlate(0.38, 0.22, 0.17, orangeMetal);
-    beltCore.position.set(0, -0.25, 0.55);
-    root.add(beltCore);
 
-    // Detailed mechanical neck: central column wrapped by 4 vertical pistons & glowing collar rings
-    const neckGroup = new THREE.Group();
-    neckGroup.position.y = 2.02;
-    root.add(neckGroup);
+    // Scarf: Wrapped warm orange scarf around neck
+    const scarfGroup = new THREE.Group();
+    scarfGroup.position.set(0, 1.98, 0);
+    root.add(scarfGroup);
 
-    const neckCenter = makeCylinder(0.2, 0.25, 0.44, jointMaterial, 12);
-    neckGroup.add(neckCenter);
+    const scarfMainRing = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.16, 12, 28), scarfOrange);
+    scarfMainRing.rotation.x = Math.PI / 2;
+    scarfGroup.add(scarfMainRing);
 
-    [-1, 1].forEach((side) => {
-      [-1, 1].forEach((frontBack) => {
-        const piston = makeCylinder(0.038, 0.038, 0.42, armorEdge, 8);
-        piston.position.set(side * 0.15, 0, frontBack * 0.12);
-        neckGroup.add(piston);
-      });
-    });
+    const scarfSubRing = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.14, 10, 24), scarfOrange);
+    scarfSubRing.rotation.x = Math.PI / 2 + 0.1;
+    scarfSubRing.position.y = -0.12;
+    scarfGroup.add(scarfSubRing);
 
-    [-0.12, 0.12].forEach((offset) => {
-      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.035, 6, 18), offset > 0 ? orangeMetal : armorEdge);
-      collar.rotation.x = Math.PI / 2;
-      collar.position.y = offset;
-      neckGroup.add(collar);
-    });
+    const scarfTail = makePlate(0.24, 0.65, 0.08, scarfOrange);
+    scarfTail.position.set(0.22, -0.4, 0.46);
+    scarfTail.rotation.z = -0.22;
+    scarfGroup.add(scarfTail);
 
-    // Helmet & Face: Faceted dome, inverted triangle ▼, large ear discs, circular camera eyes
+    // Head: Soft rounded polar bear head
     const head = new THREE.Group();
-    head.position.y = 2.7;
+    head.position.y = 2.72;
     root.add(head);
 
-    const helmet = markMajorShadow(
-      new THREE.Mesh(new THREE.DodecahedronGeometry(0.74, 0), armor),
+    const bearHead = markMajorShadow(
+      new THREE.Mesh(new THREE.DodecahedronGeometry(0.78, 2), furWhite),
     );
-    helmet.scale.set(0.96, 1.04, 0.84);
-    head.add(helmet);
+    bearHead.scale.set(1.05, 0.98, 0.94);
+    head.add(bearHead);
 
-    const crown = makePlate(0.6, 0.32, 0.12, armorMid);
-    crown.position.set(0, 0.48, 0.31);
-    crown.rotation.x = -0.28;
-    head.add(crown);
-
-    const facePlate = makePlate(0.92, 0.54, 0.12, armorMid);
-    facePlate.position.set(0, -0.02, 0.6);
-    head.add(facePlate);
-
-    const chin = makePlate(0.55, 0.22, 0.18, armorDark);
-    chin.position.set(0, -0.43, 0.48);
-    chin.rotation.x = -0.2;
-    head.add(chin);
-
-    // Forehead downward-pointing glowing orange inverted triangle ▼ (exact match to og-image-orange.jpg)
-    const foreheadTriangleGeo = new THREE.ConeGeometry(0.068, 0.085, 3);
-    const foreheadTriangle = applyShadow(new THREE.Mesh(foreheadTriangleGeo, orangeGlow));
-    foreheadTriangle.rotation.x = Math.PI / 2;
-    foreheadTriangle.rotation.z = Math.PI; // Point triangle downward ▼
-    foreheadTriangle.position.set(0, 0.36, 0.69);
-    head.add(foreheadTriangle);
-
-    // Large circular Ear / Temple housings with dual concentric glowing rings (exact match to og-image-orange.jpg)
+    // Polar Bear Ears
     [-1, 1].forEach((side) => {
-      const cheek = makePlate(0.25, 0.4, 0.11, armor);
-      cheek.position.set(side * 0.42, -0.19, 0.56);
-      cheek.rotation.z = side * 0.22;
-      head.add(cheek);
+      const earGroup = new THREE.Group();
+      earGroup.position.set(side * 0.58, 0.62, -0.05);
+      head.add(earGroup);
 
-      const earHousing = new THREE.Group();
-      earHousing.position.set(side * 0.72, 0.03, 0.02);
-      head.add(earHousing);
+      const outerEar = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 12), furWhite));
+      outerEar.scale.set(1.0, 0.95, 0.45);
+      earGroup.add(outerEar);
 
-      const templeBase = makeCylinder(0.27, 0.27, 0.18, armorDark, 24);
-      templeBase.rotation.z = Math.PI / 2;
-      earHousing.add(templeBase);
-
-      const templeOuterRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 8, 24), orangeMetal);
-      templeOuterRing.rotation.y = Math.PI / 2;
-      templeOuterRing.position.x = side * 0.095;
-      earHousing.add(templeOuterRing);
-
-      const templeInnerCap = makeCylinder(0.15, 0.15, 0.21, armorEdge, 20);
-      templeInnerCap.rotation.z = Math.PI / 2;
-      earHousing.add(templeInnerCap);
-
-      const templeInnerRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 20), orangeGlow);
-      templeInnerRing.rotation.y = Math.PI / 2;
-      templeInnerRing.position.x = side * 0.11;
-      earHousing.add(templeInnerRing);
+      const innerEar = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), innerEarMaterial));
+      innerEar.scale.set(0.9, 0.85, 0.35);
+      innerEar.position.z = 0.06;
+      earGroup.add(innerEar);
     });
 
-    // Circular camera eyes set in dark recessed sockets
-    const createEye = (side: -1 | 1) => {
+    // Muzzle & Snout
+    const muzzle = applyShadow(new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 1), furMuzzle));
+    muzzle.scale.set(0.95, 0.72, 0.9);
+    muzzle.position.set(0, -0.15, 0.58);
+    head.add(muzzle);
+
+    const nose = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), noseBlack));
+    nose.scale.set(1.2, 0.82, 0.9);
+    nose.position.set(0, -0.08, 0.88);
+    head.add(nose);
+
+    // Eyes set behind glasses
+    const createBearEye = (side: -1 | 1) => {
       const eye = new THREE.Group();
-      eye.position.set(side * 0.26, 0.07, 0.68);
+      eye.position.set(side * 0.28, 0.08, 0.66);
       head.add(eye);
 
-      addFrontCylinder(eye, 0.16, 0.07, armorDark, 0, 24);
-      const outerRim = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.024, 8, 24), orangeMetal);
-      outerRim.position.z = 0.055;
-      eye.add(outerRim);
+      const pupil = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), eyeBlack));
+      eye.add(pupil);
 
-      const lens = addFrontCylinder(eye, 0.088, 0.045, orangeGlass, 0.075, 24);
-      const pupil = addFrontCylinder(eye, 0.042, 0.028, pupilGlow, 0.11, 20);
-
-      return { eye, lens, pupil };
+      return { eye, pupil };
     };
 
-    const leftEye = createEye(-1);
-    const rightEye = createEye(1);
+    const leftEye = createBearEye(-1);
+    const rightEye = createBearEye(1);
 
-    const brow = makePlate(0.58, 0.05, 0.035, armorDark);
-    brow.position.set(0, 0.26, 0.69);
-    head.add(brow);
+    // Round Gold Wire Orange Sunglasses (Peek Gesture Target)
+    const glassesPivot = new THREE.Group();
+    glassesPivot.position.set(0, 0.09, 0.72);
+    head.add(glassesPivot);
 
-    const mouthLight = makePlate(0.24, 0.025, 0.025, orangeGlow);
-    mouthLight.position.set(0, -0.29, 0.68);
-    head.add(mouthLight);
+    [-1, 1].forEach((side) => {
+      const frameRim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.026, 12, 28), glassesFrame);
+      frameRim.position.x = side * 0.3;
+      glassesPivot.add(frameRim);
 
-    // Single sleek antenna on top-RIGHT of helmet (exact match to og-image-orange.jpg)
-    const antenna = makeCylinder(0.018, 0.026, 0.62, armorEdge, 8);
-    antenna.position.set(0.44, 0.68, 0);
-    antenna.rotation.z = -0.07;
-    head.add(antenna);
-    const antennaTip = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.052, 12, 12), orangeGlow));
-    antennaTip.position.set(0.46, 1.0, 0);
-    head.add(antennaTip);
+      const lens = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 24), glassesLens));
+      lens.rotation.x = Math.PI / 2;
+      lens.position.set(side * 0.3, 0, 0.01);
+      glassesPivot.add(lens);
+    });
 
-    // Robot arms with layered pauldrons & glowing joint rings
+    const bridge = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 8), glassesFrame));
+    bridge.rotation.z = Math.PI / 2;
+    bridge.position.set(0, 0.08, 0.02);
+    glassesPivot.add(bridge);
+
+    [-1, 1].forEach((side) => {
+      const temple = makeCylinder(0.015, 0.015, 0.42, glassesFrame, 8);
+      temple.rotation.x = Math.PI / 2;
+      temple.position.set(side * 0.54, 0, -0.18);
+      glassesPivot.add(temple);
+    });
+
+    // Arms & Paws with Suit Sleeves
     const createArm = (side: -1 | 1): RobotArm => {
       const shoulder = new THREE.Group();
       shoulder.position.set(side * 1.04, 1.58, 0);
       root.add(shoulder);
 
-      const shoulderJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.33, 16, 12), jointMaterial));
-      shoulder.add(shoulderJoint);
-      const shoulderRing = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.06, 8, 18), orangeMetal);
-      shoulderRing.rotation.y = Math.PI / 2;
-      shoulderRing.position.x = side * 0.02;
-      shoulder.add(shoulderRing);
-      const shoulderCap = applyShadow(new THREE.Mesh(new THREE.DodecahedronGeometry(0.44, 0), armor));
-      shoulderCap.scale.set(1.1, 0.72, 0.78);
-      shoulderCap.position.set(side * 0.14, 0.08, 0);
+      const shoulderCap = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.36, 14, 12), suitJacket));
       shoulder.add(shoulderCap);
 
-      const upper = makeCylinder(0.22, 0.18, 0.72, armorMid, 8);
+      const upper = makeCylinder(0.22, 0.18, 0.72, suitJacket, 12);
       markMajorShadow(upper);
       upper.position.y = -0.55;
       shoulder.add(upper);
-      const upperAccent = makePlate(0.06, 0.5, 0.05, orangeMetal);
-      upperAccent.position.set(side * 0.18, -0.54, 0.18);
-      shoulder.add(upperAccent);
 
       const elbow = new THREE.Group();
       elbow.position.y = -1.02;
       shoulder.add(elbow);
-      const elbowJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), jointMaterial));
-      elbow.add(elbowJoint);
-      const elbowRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 6, 14), orangeMetal);
-      elbowRing.rotation.x = Math.PI / 2;
-      elbow.add(elbowRing);
 
       const forearmTwistGroup = new THREE.Group();
       elbow.add(forearmTwistGroup);
 
-      const forearm = makeCylinder(0.2, 0.27, 0.62, armor, 8);
+      const forearm = makeCylinder(0.2, 0.26, 0.62, suitJacket, 12);
       markMajorShadow(forearm);
       forearm.position.y = -0.48;
       forearmTwistGroup.add(forearm);
-      const forearmGuard = makePlate(0.34, 0.42, 0.19, armorMid);
-      forearmGuard.position.set(0, -0.45, 0.19);
-      forearmTwistGroup.add(forearmGuard);
+
+      const sleeveGoldTrim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.025, 8, 18), suitGold);
+      sleeveGoldTrim.rotation.x = Math.PI / 2;
+      sleeveGoldTrim.position.y = -0.74;
+      forearmTwistGroup.add(sleeveGoldTrim);
 
       const wrist = new THREE.Group();
       wrist.position.y = -0.88;
       forearmTwistGroup.add(wrist);
-      const wristJoint = makeCylinder(0.13, 0.13, 0.16, orangeMetal, 12);
-      wrist.add(wristJoint);
-      const hand = makePlate(0.38, 0.3, 0.34, armor);
-      hand.position.y = -0.22;
-      wrist.add(hand);
+
+      const paw = applyShadow(new THREE.Mesh(new THREE.DodecahedronGeometry(0.26, 1), furWhite));
+      paw.scale.set(1.1, 0.85, 1.0);
+      paw.position.y = -0.18;
+      wrist.add(paw);
+
       const fingers: THREE.Group[] = [];
       for (let finger = -1; finger <= 1; finger += 1) {
         const fingerGroup = new THREE.Group();
         fingerGroup.position.set(finger * 0.1, -0.32, 0.02);
         wrist.add(fingerGroup);
-        const digit = makePlate(0.065, 0.2, 0.085, armorEdge);
-        digit.position.y = -0.1;
+
+        const digit = makePlate(0.07, 0.18, 0.08, furWhite);
+        digit.position.y = -0.08;
         fingerGroup.add(digit);
-        const tip = makePlate(0.055, 0.1, 0.075, armorMid);
-        tip.position.y = -0.22;
-        fingerGroup.add(tip);
         fingers.push(fingerGroup);
       }
       return { shoulder, elbow, wrist, forearmTwistGroup, fingers };
@@ -520,77 +398,44 @@ const ProceduralCharacter = ({
     const leftArm = createArm(-1);
     const rightArm = createArm(1);
 
-    const createLeg = (side: -1 | 1) => {
-      const hip = new THREE.Group();
-      hip.position.set(side * 0.39, -0.35, 0);
-      root.add(hip);
+    // Coffee Mug Accessory (Used in "About" Section)
+    const coffeeMug = new THREE.Group();
+    coffeeMug.position.set(-0.35, -0.12, 0.22);
+    leftArm.wrist.add(coffeeMug);
 
-      const hipJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), jointMaterial));
-      hip.add(hipJoint);
-      const thigh = makeCylinder(0.26, 0.2, 0.85, armorMid, 8);
-      markMajorShadow(thigh);
-      thigh.position.y = -0.62;
-      hip.add(thigh);
-      const thighPlate = makePlate(0.33, 0.55, 0.16, armor);
-      thighPlate.position.set(0, -0.56, 0.22);
-      hip.add(thighPlate);
+    const mugBody = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.32, 16), scarfOrange));
+    coffeeMug.add(mugBody);
+    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.03, 8, 16), scarfOrange);
+    mugHandle.position.set(-0.14, 0, 0);
+    coffeeMug.add(mugHandle);
+    coffeeMug.visible = false;
 
-      const knee = new THREE.Group();
-      knee.position.y = -1.15;
-      hip.add(knee);
-      const kneeJoint = applyShadow(new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), jointMaterial));
-      knee.add(kneeJoint);
-      const kneePlate = applyShadow(new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), orangeMetal));
-      kneePlate.scale.set(0.78, 0.9, 0.55);
-      kneePlate.position.z = 0.23;
-      knee.add(kneePlate);
-
-      const shin = makeCylinder(0.2, 0.25, 0.78, armor, 8);
-      markMajorShadow(shin);
-      shin.position.y = -0.55;
-      knee.add(shin);
-      const shinGuard = makePlate(0.32, 0.56, 0.16, armorMid);
-      shinGuard.position.set(0, -0.52, 0.22);
-      knee.add(shinGuard);
-
-      const ankle = makeCylinder(0.13, 0.13, 0.17, orangeMetal, 10);
-      ankle.position.y = -1;
-      knee.add(ankle);
-      const foot = makePlate(0.5, 0.28, 0.75, armor);
-      markMajorShadow(foot);
-      foot.position.set(0, -1.18, 0.17);
-      knee.add(foot);
-      const toe = makePlate(0.42, 0.12, 0.22, orangeMetal);
-      toe.position.set(0, -1.18, 0.58);
-      knee.add(toe);
-      return hip;
-    };
-
-    const leftLeg = createLeg(-1);
-    const rightLeg = createLeg(1);
-
+    // Holographic Tech Tablet Accessory (Used in "Toolkit" Section)
     const hologram = new THREE.Group();
-    hologram.position.set(1.9, 1.25, 0.15);
+    hologram.position.set(1.85, 1.25, 0.15);
     root.add(hologram);
+
     const hologramMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff6b00,
+      color: 0xff6600,
       transparent: true,
       opacity: 0,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
-    const hologramPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.25, 1.32), hologramMaterial);
+    const hologramPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.3), hologramMaterial);
     hologram.add(hologramPanel);
+
     const hologramEdges = new THREE.LineSegments(
       new THREE.EdgesGeometry(hologramPanel.geometry),
-      new THREE.LineBasicMaterial({ color: 0xff9a4f, transparent: true, opacity: 0 }),
+      new THREE.LineBasicMaterial({ color: 0xffa866, transparent: true, opacity: 0 }),
     );
     hologram.add(hologramEdges);
 
+    // Floor Ring Light
     const floorRingMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff5e00,
+      color: 0xff5500,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.45,
     });
     const floorRing = new THREE.Mesh(
       new THREE.TorusGeometry(1.5, 0.018, 8, 90),
@@ -600,6 +445,7 @@ const ProceduralCharacter = ({
     floorRing.position.y = -2.72;
     root.add(floorRing);
 
+    // Ambient floating orange sparkles
     const particlePositions = new Float32Array(65 * 3);
     for (let index = 0; index < particlePositions.length; index += 3) {
       particlePositions[index] = (Math.random() - 0.5) * 6;
@@ -611,42 +457,32 @@ const ProceduralCharacter = ({
     const particles = new THREE.Points(
       particleGeometry,
       new THREE.PointsMaterial({
-        color: 0xff7a22,
-        size: 0.03,
+        color: 0xff7722,
+        size: 0.035,
         transparent: true,
-        opacity: 0.4,
+        opacity: 0.45,
       }),
     );
     root.add(particles);
 
-    // Ambient: slightly warm dark — body stays near-black, silver edges catch specular
-    const ambient = new THREE.HemisphereLight(0x241510, 0x060402, 1.1);
-    // Key light: warm orange-white from front-right top — illuminates silver facet edges
-    const key = new THREE.DirectionalLight(0xffa060, 3.8);
+    // Studio lighting
+    const ambient = new THREE.HemisphereLight(0x352015, 0x0c0603, 1.25);
+    const key = new THREE.DirectionalLight(0xffaa77, 3.6);
     key.position.set(4, 6, 7);
     key.castShadow = true;
-    // Strong orange rim — the dramatic halo visible in reference
-    const orangeRim = new THREE.PointLight(0xff5500, 32, 20);
+
+    const orangeRim = new THREE.PointLight(0xff5500, 30, 20);
     orangeRim.position.set(2.5, 3.8, -1.5);
-    // Fill light from front — makes silver edges visible as silver/white specular
-    const frontFill = new THREE.PointLight(0xffe8d0, 2.5, 12);
+
+    const frontFill = new THREE.PointLight(0xffebd8, 2.2, 12);
     frontFill.position.set(0, 1.5, 8);
     scene.add(ambient, key, orangeRim, frontFill);
 
     root.updateWorldMatrix(true, true);
     const modelBounds = new THREE.Box3();
-    [
-      torso,
-      spine,
-      waist,
-      beltCore,
-      neckGroup,
-      head,
-      leftArm.shoulder,
-      rightArm.shoulder,
-      leftLeg,
-      rightLeg,
-    ].forEach((part) => modelBounds.expandByObject(part));
+    [torso, scarfGroup, head, leftArm.shoulder, rightArm.shoulder].forEach((part) =>
+      modelBounds.expandByObject(part),
+    );
     const modelHeight = Math.max(modelBounds.max.y - modelBounds.min.y, 0.001);
     const modelWidth = Math.max(modelBounds.max.x - modelBounds.min.x, 0.001);
     const modelCenterY = (modelBounds.max.y + modelBounds.min.y) / 2;
@@ -730,6 +566,7 @@ const ProceduralCharacter = ({
     );
     root.scale.setScalar(initialScale);
     root.rotation.y = initialPose.rotation;
+
     const rootMotion = {
       x: { value: 0 },
       y: { value: 0 },
@@ -799,133 +636,99 @@ const ProceduralCharacter = ({
           1,
         ),
       );
-      const elbow = side === 1 ? -elbowMagnitude : elbowMagnitude;
-      const targetAngle = Math.atan2(dx, -dy);
-      const shoulder =
-        targetAngle -
-        Math.atan2(
-          lowerLength * Math.sin(elbow),
-          upperLength + lowerLength * Math.cos(elbow),
-        );
+      const baseAngle = Math.atan2(dy, dx);
+      const shoulderMagnitude =
+        baseAngle +
+        side *
+          Math.asin(
+            THREE.MathUtils.clamp((lowerLength * Math.sin(elbowMagnitude)) / reach, -1, 1),
+          );
+      const rightForearmTwist = 1.28;
+      arm.forearmTwistGroup.rotation.y = side * rightForearmTwist;
       return {
-        shoulder: THREE.MathUtils.clamp(shoulder, -2.15, 2.15),
-        elbow: THREE.MathUtils.clamp(elbow, -1.4, 1.4),
+        shoulder: THREE.MathUtils.clamp(shoulderMagnitude - Math.PI / 2, -2.1, 0.4),
+        elbow: side * THREE.MathUtils.clamp(Math.PI - elbowMagnitude, 0.15, 2.1),
       };
     };
-    let scrollVelocity = 0;
-    let lastScroll = window.scrollY;
-    let animationFrame = 0;
-    let isRendering = false;
-    let lastPointerActivity = Number.NEGATIVE_INFINITY;
-    let pointerTrackingWeight = 0;
-    let frameTimeTotal = 0;
-    let frameTimeSamples = 0;
+
     const pointingTargets = new Map<CharacterZone, HTMLElement>();
-    (["about", "capabilities", "career", "work", "toolkit", "contact"] as CharacterZone[])
-      .forEach((targetZone) => {
-        const target = document.querySelector<HTMLElement>(
+    (["about", "capabilities", "career", "work", "toolkit", "contact"] as CharacterZone[]).forEach(
+      (targetZone) => {
+        const element = document.querySelector<HTMLElement>(
           `[data-character-target="${targetZone}"]`,
         );
-        if (target) pointingTargets.set(targetZone, target);
-      });
+        if (element) pointingTargets.set(targetZone, element);
+      },
+    );
 
-    // ── Spring / gravity physics state ───────────────────────────────────────
-    // Each spring: { pos, vel } — pos is displacement from rest, vel is velocity
-    type Sp = { pos: number; vel: number };
-    const mkSp = (): Sp => ({ pos: 0, vel: 0 });
-    const sp = {
-      headX:   mkSp(), headY:   mkSp(),
-      torso:   mkSp(),
-      lShoulderZ: mkSp(), rShoulderZ: mkSp(),
-      lShoulderX: mkSp(), rShoulderX: mkSp(),
-      lElbow: mkSp(),   rElbow: mkSp(),
-      lWrist: mkSp(),   rWrist: mkSp(),
-      lLeg:   mkSp(),   rLeg:   mkSp(),
+    let isPointerActive = false;
+    let pointerResetTimer = 0;
+    const onPointerMove = (event: PointerEvent) => {
+      isPointerActive = true;
+      window.clearTimeout(pointerResetTimer);
+      const nx = (event.clientX / window.innerWidth) * 2 - 1;
+      const ny = 1 - (event.clientY / window.innerHeight) * 2;
+      pointerTarget.set(nx, ny);
+      pointerResetTimer = window.setTimeout(() => {
+        isPointerActive = false;
+        pointerTarget.set(0, 0);
+      }, 3500);
     };
-    // Integrate a spring toward target, returns new pos
-    const springClamped = (
-      s: Sp,
-      target: number,
-      stiffness: number,
-      damping: number,
-      dt: number,
-      maxPosition: number,
-      maxVelocity: number,
-    ): number => {
-      const err = s.pos - target;
-      s.vel += (-stiffness * err - damping * s.vel) * dt;
-      s.vel = THREE.MathUtils.clamp(s.vel, -maxVelocity, maxVelocity);
-      s.pos += s.vel * dt;
-      s.pos = THREE.MathUtils.clamp(s.pos, -maxPosition, maxPosition);
-      return s.pos;
+
+    const onPointerLeave = () => {
+      isPointerActive = false;
+      pointerTarget.set(0, 0);
     };
-    type SmoothVelocity = { value: number };
+
+    let scrollVelocity = 0;
+    let lastScrollY = window.scrollY;
+    let lastScrollTime = performance.now();
+    const onScroll = () => {
+      const now = performance.now();
+      const delta = now - lastScrollTime;
+      if (delta > 0) {
+        const rawDelta = (window.scrollY - lastScrollY) / delta;
+        scrollVelocity = THREE.MathUtils.clamp(rawDelta, -50, 50);
+        lastScrollY = window.scrollY;
+        lastScrollTime = now;
+      }
+    };
+
     const smoothDampValue = (
       current: number,
       target: number,
-      velocity: SmoothVelocity,
+      state: { pos: number; vel: number },
       smoothTime: number,
       dt: number,
-      maxSpeed: number,
     ) => {
-      const safeTime = Math.max(0.0001, smoothTime);
-      const omega = 2 / safeTime;
-      const step = omega * dt;
-      const decay = 1 / (1 + step + 0.48 * step * step + 0.235 * step * step * step);
-      const maximumChange = maxSpeed * safeTime;
-      const change = THREE.MathUtils.clamp(
-        current - target,
-        -maximumChange,
-        maximumChange,
-      );
-      const adjustedTarget = current - change;
-      const temporary = (velocity.value + omega * change) * dt;
-      velocity.value = (velocity.value - omega * temporary) * decay;
-      const output = adjustedTarget + (change + temporary) * decay;
-      if ((target - current > 0) === (output > target)) {
-        velocity.value = 0;
-        return target;
-      }
-      return output;
+      const omega = 2 / Math.max(smoothTime, 0.0001);
+      const x = omega * dt;
+      const exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+      const change = current - target;
+      const temp = (state.vel + omega * change) * dt;
+      state.vel = (state.vel - omega * temp) * exp;
+      state.pos = target + (change + temp) * exp;
+      return state.pos;
     };
-    // Apply an impulse (velocity kick) to a spring
-    const kick = (s: Sp, impulse: number) => { s.vel += impulse; };
-    // ─────────────────────────────────────────────────────────────────────────
 
-    const onPointerMove = (event: PointerEvent) => {
-      if (
-        window.innerWidth < 900 ||
-        !window.matchMedia("(hover: hover) and (pointer: fine)").matches
-      ) return;
-      const nx = (event.clientX / window.innerWidth) * 2 - 1;
-      const ny = -(event.clientY / window.innerHeight) * 2 + 1;
+    const sp = {
+      x: { pos: initialPose.x, vel: 0 },
+      y: { pos: initialPose.y, vel: 0 },
+      scale: { pos: initialPose.scale, vel: 0 },
+      rotation: { pos: initialPose.rotation, vel: 0 },
+      lShoulder: { pos: 0, vel: 0 },
+      lElbow: { pos: 0, vel: 0 },
+      rShoulder: { pos: 0, vel: 0 },
+      rElbow: { pos: 0, vel: 0 },
+      headX: { pos: 0, vel: 0 },
+      headY: { pos: 0, vel: 0 },
+      glassesPeek: { pos: 0, vel: 0 },
+    };
 
-      pointerTarget.set(nx, ny);
-      lastPointerActivity = performance.now();
-    };
-    const onPointerLeave = () => {
-      lastPointerActivity = Number.NEGATIVE_INFINITY;
-    };
-    const onScroll = () => {
-      const rawDelta = window.scrollY - lastScroll;
-      const delta = THREE.MathUtils.clamp(rawDelta, -50, 50);
-      lastScroll = window.scrollY;
-      if (reducedMotionRef.current) {
-        scrollVelocity = 0;
-        Object.values(sp).forEach((springState) => {
-          springState.pos = 0;
-          springState.vel = 0;
-        });
-        return;
-      }
-      scrollVelocity = THREE.MathUtils.clamp(
-        scrollVelocity + delta * 0.002,
-        -0.18,
-        0.18,
-      );
-      kick(sp.torso, delta * 0.0015);
-      kick(sp.headY, -delta * 0.001);
-    };
+    let fpsFrames = 0;
+    let fpsStart = performance.now();
+    let isRendering = true;
+
     const onContextLost = (event: Event) => {
       event.preventDefault();
       setWebglUnavailable(true);
@@ -947,553 +750,213 @@ const ProceduralCharacter = ({
     let previousZone = zoneRef.current;
     let lastRenderedAt = 0;
     const clock = new THREE.Clock();
+
     const render = () => {
       if (document.hidden) {
         isRendering = false;
         return;
       }
-      isRendering = true;
-      animationFrame = window.requestAnimationFrame(render);
 
-      const frameNow = performance.now();
-      const frameInterval =
-        reducedMotionRef.current || motionPausedRef.current
-          ? 1000 / 12
-          : window.innerWidth < 900
-            ? 1000 / 30
-            : 0;
-      if (frameInterval && frameNow - lastRenderedAt < frameInterval) return;
-      lastRenderedAt = frameNow;
-      const delta = Math.min(clock.getDelta(), 0.05);
-      const elapsed = clock.elapsedTime;
-      if (elapsed > 2) {
-        frameTimeTotal += delta;
-        frameTimeSamples += 1;
-        if (frameTimeSamples >= 120) {
-          const averageFps = frameTimeSamples / frameTimeTotal;
-          if (averageFps < 52 && qualityLevel > 0) {
-            qualityLevel = qualityLevel === 2 ? 1 : 0;
-            applyRendererQuality();
-          }
-          frameTimeTotal = 0;
-          frameTimeSamples = 0;
+      const now = performance.now();
+      const elapsed = clock.getElapsedTime();
+      const deltaSeconds = Math.min(clock.getDelta(), 0.08);
+
+      fpsFrames += 1;
+      if (now - fpsStart >= 2000) {
+        const averageFps = (fpsFrames * 1000) / (now - fpsStart);
+        fpsFrames = 0;
+        fpsStart = now;
+        if (averageFps < 52 && qualityLevel > 0) {
+          qualityLevel = (qualityLevel - 1) as QualityLevel;
+          applyRendererQuality();
         }
       }
-      const zone = zoneRef.current;
-      const viewportWidth = window.innerWidth;
-      const basePose = (viewportWidth < 900 ? mobilePoses : desktopPoses)[zone];
-      const compactDesktop = viewportWidth >= 900 && viewportWidth < 1180;
-      const poseScale = compactDesktop ? basePose.scale * 0.92 : basePose.scale;
-      const fittedFrame = getFittedFrame(zone, poseScale);
-      const targetScale = fittedFrame.scale;
-      const fallbackX = compactDesktop ? basePose.x * 0.72 : basePose.x;
-      const targetX = getTargetX(zone, fallbackX, targetScale);
-      const targetY = fittedFrame.y + basePose.y;
 
+      const active = zoneRef.current;
       const motion = !reducedMotionRef.current && !motionPausedRef.current;
-      const now = performance.now();
-      const timeSinceEntry = now - zoneEntryTimeRef.current;
-      const timeSinceCelebration = now - celebrationTimeRef.current;
-      let phase = transitionPhaseRef.current;
-      if (zone !== previousZone) {
-        previousZone = zone;
-        phase = "traveling";
-        transitionPhaseRef.current = phase;
+      const phase = transitionPhaseRef.current;
+
+      if (active !== previousZone) {
+        previousZone = active;
       }
+
+      const poseSet = window.innerWidth < 900 ? mobilePoses : desktopPoses;
+      const pose = poseSet[active];
+      const fittedFrame = getFittedFrame(active, pose.scale);
+
+      const targetX = getTargetX(active, pose.x, fittedFrame.scale);
+      const targetY = fittedFrame.y + pose.y;
+      const targetScale = fittedFrame.scale;
+      const targetRotation = pose.rotation;
+
       if (!motion) {
-        scrollVelocity = 0;
         Object.values(sp).forEach((springState) => {
           springState.pos = 0;
           springState.vel = 0;
         });
-        phase = "gesture";
-        transitionPhaseRef.current = phase;
-      } else if (phase === "neutral") {
-        phase = "traveling";
-        transitionPhaseRef.current = phase;
-      } else if (phase === "traveling" && timeSinceEntry >= 850) {
-        phase = "gesture";
-        transitionPhaseRef.current = phase;
-      }
-      // Slow breathing idle oscillation
-      const idle  = motion ? Math.sin(elapsed * 1.35) * 0.045 : 0;
-      const breathe = motion ? Math.sin(elapsed * 1.6) * 0.008 : 0;
-
-      // ── Root pose ─────────────────────────────────────────────────────────
-      if (!motion) {
-        root.position.x = targetX;
-        root.position.y = targetY;
-        root.scale.setScalar(targetScale);
-        rootMotion.x.value = 0;
-        rootMotion.y.value = 0;
-        rootMotion.scale.value = 0;
-        rootMotion.rotation.value = 0;
+        rootMotion.x.value = targetX;
+        rootMotion.y.value = targetY;
+        rootMotion.scale.value = targetScale;
+        rootMotion.rotation.value = targetRotation;
       } else {
-        root.position.x = smoothDampValue(
-          root.position.x,
-          targetX,
-          rootMotion.x,
-          0.38,
-          delta,
-          14,
-        );
-        root.position.y = smoothDampValue(
-          root.position.y,
-          targetY + idle,
-          rootMotion.y,
-          0.42,
-          delta,
-          12,
-        );
-        root.scale.setScalar(
-          smoothDampValue(
-            root.scale.x,
-            targetScale,
-            rootMotion.scale,
-            0.46,
-            delta,
-            1.8,
-          ),
-        );
+        rootMotion.x.value = smoothDampValue(rootMotion.x.value, targetX, sp.x, 0.24, deltaSeconds);
+        rootMotion.y.value = smoothDampValue(rootMotion.y.value, targetY, sp.y, 0.24, deltaSeconds);
+        rootMotion.scale.value = smoothDampValue(rootMotion.scale.value, targetScale, sp.scale, 0.26, deltaSeconds);
+        rootMotion.rotation.value = smoothDampValue(rootMotion.rotation.value, targetRotation, sp.rotation, 0.22, deltaSeconds);
       }
-      const torsoSpring = springClamped(sp.torso, 0, 14, 7.5, delta, 0.3, 1.5);
-      root.rotation.y = motion
-        ? smoothDampValue(
-            root.rotation.y,
-            basePose.rotation + scrollVelocity + torsoSpring * 0.18,
-            rootMotion.rotation,
-            0.34,
-            delta,
-            1.2,
-          )
-        : basePose.rotation;
-      // Torso breathe + spring sway
-      torso.scale.set(1 + breathe, 1 + breathe, 1 + breathe);
-      torso.rotation.y = motion ? Math.sin(elapsed * 0.82) * 0.018 : 0;
-      scrollVelocity = THREE.MathUtils.damp(scrollVelocity, 0, 6, delta);
 
-      // ── Head: FIX — bob AROUND base y=2.7, never overwrite it ─────────────
-      pointer.lerp(pointerTarget, 1 - Math.exp(-18 * delta));
-      const pointerIsActive = motion && performance.now() - lastPointerActivity < 1800;
-      pointerTrackingWeight = THREE.MathUtils.damp(
-        pointerTrackingWeight,
-        pointerIsActive ? 1 : 0,
-        5,
-        delta,
-      );
-      root.updateWorldMatrix(true, true);
+      root.position.set(rootMotion.x.value, rootMotion.y.value, 0);
+      root.scale.setScalar(rootMotion.scale.value);
+      root.rotation.y = rootMotion.rotation.value;
+
+      pointer.lerp(pointerTarget, motion ? 0.08 : 1);
+
+      // Glasses Peek gesture (slides down nose on interaction)
+      const targetGlassesPeek = isPointerActive || active === "hero" ? 1 : 0;
+      sp.glassesPeek.pos = smoothDampValue(sp.glassesPeek.pos, targetGlassesPeek, sp.glassesPeek, 0.2, deltaSeconds);
+      glassesPivot.position.y = 0.09 - sp.glassesPeek.pos * 0.08;
+      glassesPivot.rotation.x = sp.glassesPeek.pos * 0.12;
+
+      // Head & Eye Gaze Tracking
       head.getWorldPosition(projectedHead);
       projectedHead.project(camera);
       const gazeDeltaX = pointer.x - projectedHead.x;
       const gazeDeltaY = pointer.y - projectedHead.y;
-      const automaticGaze = sectionGaze[zone];
-      const automaticGazeX =
-        automaticGaze.x + (motion ? Math.sin(elapsed * 0.55) * 0.045 : 0);
-      const automaticGazeY =
-        automaticGaze.y + (motion ? Math.sin(elapsed * 0.8) * 0.018 : 0);
-      const gazeX = THREE.MathUtils.lerp(
-        automaticGazeX,
-        THREE.MathUtils.clamp(gazeDeltaX * 0.45, -0.42, 0.42),
-        pointerTrackingWeight,
-      );
-      const gazeY = THREE.MathUtils.lerp(
-        automaticGazeY,
-        THREE.MathUtils.clamp(-gazeDeltaY * 0.2, -0.22, 0.22),
-        pointerTrackingWeight,
-      );
 
-      // Spring physics add on top of gaze target
-      const headSpX = springClamped(sp.headX, 0, 16, 8, delta, 0.45, 2);
-      const headSpY = springClamped(sp.headY, 0, 16, 8, delta, 0.45, 2);
-      head.rotation.y = THREE.MathUtils.clamp(
-        THREE.MathUtils.damp(head.rotation.y, gazeX + headSpX * 0.4, 7, delta),
-        -0.55,
-        0.55,
-      );
-      head.rotation.x = THREE.MathUtils.clamp(
-        THREE.MathUtils.damp(head.rotation.x, gazeY + headSpY * 0.25, 7, delta),
-        -0.35,
-        0.35,
-      );
-      // ⚠️ CRITICAL: add to base y=2.7, never zero it out
-      const headBob = motion ? Math.sin(elapsed * 1.35 + 0.4) * 0.018 : 0;
-      head.position.y = 2.7 + headBob + headSpY * 0.04;
+      const pointerTrackingWeight = THREE.MathUtils.damp(0, 1, 4, deltaSeconds);
+      const targetHeadY = THREE.MathUtils.clamp(gazeDeltaX * 0.45 * pointerTrackingWeight + sectionGaze[active].x, -0.42, 0.42);
+      const targetHeadX = THREE.MathUtils.clamp(-gazeDeltaY * 0.3 * pointerTrackingWeight + sectionGaze[active].y, -0.28, 0.28);
 
-      // ── Eyes & blink ──────────────────────────────────────────────────────
+      sp.headY.pos = smoothDampValue(sp.headY.pos, targetHeadY, sp.headY, 0.18, deltaSeconds);
+      sp.headX.pos = smoothDampValue(sp.headX.pos, targetHeadX, sp.headX, 0.18, deltaSeconds);
+      head.rotation.y = sp.headY.pos;
+      head.rotation.x = sp.headX.pos;
+
       pupilTarget.set(
-        THREE.MathUtils.lerp(automaticGaze.x * 0.035, gazeDeltaX * 0.038, pointerTrackingWeight),
-        THREE.MathUtils.lerp(-automaticGaze.y * 0.025, gazeDeltaY * 0.03, pointerTrackingWeight),
+        THREE.MathUtils.clamp(gazeDeltaX * 0.03, -0.035, 0.035),
+        THREE.MathUtils.clamp(gazeDeltaY * 0.03, -0.035, 0.035),
       );
       if (pupilTarget.length() > 0.038) pupilTarget.setLength(0.038);
-      leftEye.pupil.position.x = THREE.MathUtils.damp(
-        leftEye.pupil.position.x,
-        pupilTarget.x,
-        18,
-        delta,
-      );
-      leftEye.pupil.position.y = THREE.MathUtils.damp(
-        leftEye.pupil.position.y,
-        pupilTarget.y,
-        18,
-        delta,
-      );
-      rightEye.pupil.position.x = THREE.MathUtils.damp(
-        rightEye.pupil.position.x,
-        pupilTarget.x,
-        18,
-        delta,
-      );
-      rightEye.pupil.position.y = THREE.MathUtils.damp(
-        rightEye.pupil.position.y,
-        pupilTarget.y,
-        18,
-        delta,
-      );
-      const blink = motion && Math.sin(elapsed * 0.72) > 0.985 ? 0.18 : 1;
-      leftEye.lens.scale.y  = blink; leftEye.pupil.scale.y  = blink;
-      rightEye.lens.scale.y = blink; rightEye.pupil.scale.y = blink;
+      leftEye.pupil.position.set(pupilTarget.x, pupilTarget.y, 0.065);
+      rightEye.pupil.position.set(pupilTarget.x, pupilTarget.y, 0.065);
 
-      // ── Arm targets (zone-based) ───────────────────────────────────────────
-      let leftShoulderTarget  = motion ? -0.06 + Math.sin(elapsed * 0.85) * 0.025 : -0.06;
-      let rightShoulderTarget = motion ?  0.06 - Math.sin(elapsed * 0.85) * 0.025 :  0.06;
-      let leftElbowTarget  = motion ? Math.sin(elapsed * 0.9) * 0.02 : 0;
-      let rightElbowTarget = motion ? -Math.sin(elapsed * 0.9) * 0.02 : 0;
-      let leftWristTarget = 0, rightWristTarget = 0;
-      let armDepth = motion ? Math.sin(elapsed * 0.7) * 0.018 : 0;
+      // Arm Poses & Inverse Kinematics
+      let leftShoulderTarget = 0;
+      let leftElbowTarget = 0;
+      let rightShoulderTarget = 0;
+      let rightElbowTarget = 0;
 
+      coffeeMug.visible = active === "about";
+      hologramMaterial.opacity = active === "toolkit" ? 0.6 : 0;
+      hologramEdges.material.opacity = active === "toolkit" ? 0.8 : 0;
+
+      const timeSinceEntry = now - zoneEntryTimeRef.current;
       const gestureDuration: Record<CharacterZone, number> = {
-        hero: 4100,
-        about: 2700,
-        capabilities: 2500,
-        career: 2400,
-        work: 2700,
-        toolkit: 2700,
-        contact: 3400,
+        hero: 3600,
+        about: 3200,
+        capabilities: 3400,
+        career: 3200,
+        work: 3400,
+        toolkit: 3200,
+        contact: 3600,
       };
-      const gestureActive =
-        motion && phase === "gesture" && timeSinceEntry < gestureDuration[zone];
+
       const heroWaveTime = timeSinceEntry;
-      const heroGreeting =
-        zone === "hero" && gestureActive && heroWaveTime >= 250 && heroWaveTime < 3600;
-      const celebrationWaveActive =
-        zone === "contact" && motion && timeSinceCelebration >= 0 && timeSinceCelebration < 2800;
-      const contactWaveActive =
-        zone === "contact" &&
-        ((gestureActive && timeSinceEntry > 350) || celebrationWaveActive);
-      if (heroGreeting) {
-        const wave = Math.sin((heroWaveTime - 250) * 0.014);
-        rightShoulderTarget = 1.68;
-        rightElbowTarget = 1.05 + wave * 0.07;
-        rightWristTarget = wave * 0.22;
-        armDepth = -0.14;
-      } else if (zone === "about" && gestureActive) {
-        leftShoulderTarget = -1.08; leftElbowTarget = 0.48;
-        leftWristTarget = -0.18; armDepth = 0.08;
-      } else if (zone === "capabilities" && gestureActive) {
-        rightShoulderTarget = 0.95; rightElbowTarget = -0.52;
-        rightWristTarget = 0.12; armDepth = -0.1;
-      } else if (zone === "career" && gestureActive) {
-        rightShoulderTarget = 0.82; rightElbowTarget = -0.42;
-        rightWristTarget = 0.1; armDepth = -0.07;
-      } else if (zone === "work" && gestureActive) {
-        leftShoulderTarget = -0.78; leftElbowTarget = 0.4;
-        leftWristTarget = -0.12; armDepth = 0.08;
-      } else if (zone === "toolkit" && gestureActive) {
-        leftShoulderTarget = -0.55; leftElbowTarget = 0.35;
-        leftWristTarget = -0.08;
-        rightShoulderTarget = 0.48; rightElbowTarget = -0.3;
-        rightWristTarget = 0.06; armDepth = -0.04;
-      } else if (zone === "contact" && contactWaveActive) {
-        const wave = contactWaveActive
-          ? Math.sin(
-              ((celebrationWaveActive ? timeSinceCelebration : timeSinceEntry) - 350) *
-                0.014,
-            )
-          : 0;
-        rightShoulderTarget = 1.68;
-        rightElbowTarget = 1.05 + wave * 0.07;
-        rightWristTarget = contactWaveActive ? wave * 0.22 : 0.08;
-        armDepth = -0.14;
-      }
+      const celebrationWaveActive = now - celebrationTimeRef.current < 2800;
 
-      const pointingTarget = pointingTargets.get(zone);
-      if (pointingTarget && gestureActive && zone === "about") {
-        const pointingPose = solvePointingPose(pointingTarget, leftArm, -1);
-        leftShoulderTarget = pointingPose.shoulder;
-        leftElbowTarget = pointingPose.elbow;
-        leftWristTarget = 0;
-        armDepth = 0.06;
-      } else if (
-        pointingTarget &&
-        gestureActive &&
-        (zone === "capabilities" || zone === "career" || zone === "toolkit")
-      ) {
-        const pointingPose = solvePointingPose(pointingTarget, rightArm, 1);
-        rightShoulderTarget = pointingPose.shoulder;
-        rightElbowTarget = pointingPose.elbow;
-        rightWristTarget = 0;
-        armDepth = -0.06;
-      } else if (pointingTarget && gestureActive && zone === "work") {
-        const pointingPose = solvePointingPose(pointingTarget, leftArm, -1);
-        leftShoulderTarget = pointingPose.shoulder;
-        leftElbowTarget = pointingPose.elbow;
-        leftWristTarget = 0;
-        armDepth = 0.06;
-      }
-
-      const gestureProgress = motion
-        ? THREE.MathUtils.clamp((timeSinceEntry - 180) / 620, 0, 1)
-        : 1;
-      const gestureEntryBlend =
-        gestureProgress *
-        gestureProgress *
-        gestureProgress *
-        (gestureProgress * (gestureProgress * 6 - 15) + 10);
-      const exitProgress = THREE.MathUtils.clamp(
-        (gestureDuration[zone] - timeSinceEntry) / 550,
-        0,
-        1,
-      );
-      const gestureBlend =
-        celebrationWaveActive
-          ? 1
-          : gestureEntryBlend * exitProgress;
-      const leftShoulderRest = -0.06;
-      const rightShoulderRest = 0.06;
-      leftShoulderTarget = THREE.MathUtils.lerp(
-        leftShoulderRest,
-        leftShoulderTarget,
-        gestureBlend,
-      );
-      rightShoulderTarget = THREE.MathUtils.lerp(
-        rightShoulderRest,
-        rightShoulderTarget,
-        gestureBlend,
-      );
-      leftElbowTarget *= gestureBlend;
-      rightElbowTarget *= gestureBlend;
-      leftWristTarget *= gestureBlend;
-      rightWristTarget *= gestureBlend;
-      armDepth *= gestureBlend;
-
-      const torsoCounterLean = !motion
-        ? 0
-        : rightShoulderTarget > 0.7
-          ? 0.045
-          : leftShoulderTarget < -0.7
-            ? -0.045
-            : 0;
-      root.rotation.z = THREE.MathUtils.damp(
-        root.rotation.z,
-        (motion ? Math.sin(elapsed * 0.72) * 0.008 : 0) + torsoCounterLean,
-        3.5,
-        delta,
-      );
-
-      // ── Physics springs added on top of zone targets ───────────────────────
-      const lsz = springClamped(sp.lShoulderZ, 0, 20, 8, delta, 0.55, 2.5);
-      const rsz = springClamped(sp.rShoulderZ, 0, 20, 8, delta, 0.55, 2.5);
-      const lsx = springClamped(sp.lShoulderX, 0, 18, 7.5, delta, 0.4, 2);
-      const rsx = springClamped(sp.rShoulderX, 0, 18, 7.5, delta, 0.4, 2);
-      const lez = springClamped(sp.lElbow, 0, 22, 8, delta, 0.45, 2);
-      const rez = springClamped(sp.rElbow, 0, 22, 8, delta, 0.45, 2);
-      const lwz = springClamped(sp.lWrist, 0, 26, 8, delta, 0.35, 1.8);
-      const rwz = springClamped(sp.rWrist, 0, 26, 8, delta, 0.35, 1.8);
-      const llx = springClamped(sp.lLeg, 0, 18, 7, delta, 0.2, 1);
-      const rlx = springClamped(sp.rLeg, 0, 18, 7, delta, 0.2, 1);
-
-      // Gravity droop on arms — forearms hang naturally
-      const gravityDroop = motion ? 0.06 : 0;
-
-      shoulderEuler.set(
-        THREE.MathUtils.clamp(armDepth + lsx * 0.35, -0.6, 0.6),
-        0,
-        THREE.MathUtils.clamp(leftShoulderTarget + lsz * 0.55, -2.3, 2.3),
-      );
-      leftShoulderTargetQuaternion.setFromEuler(shoulderEuler);
-      leftArm.shoulder.quaternion.slerp(
-        leftShoulderTargetQuaternion,
-        1 - Math.exp(-8 * delta),
-      );
-      shoulderEuler.set(
-        THREE.MathUtils.clamp(-armDepth + rsx * 0.35, -0.6, 0.6),
-        0,
-        THREE.MathUtils.clamp(rightShoulderTarget + rsz * 0.55, -2.3, 2.3),
-      );
-      rightShoulderTargetQuaternion.setFromEuler(shoulderEuler);
-      rightArm.shoulder.quaternion.slerp(
-        rightShoulderTargetQuaternion,
-        1 - Math.exp(-8 * delta),
-      );
-      leftArm.elbow.rotation.z = THREE.MathUtils.clamp(
-        THREE.MathUtils.damp(
-          leftArm.elbow.rotation.z,
-          leftElbowTarget + lez * 0.45 + gravityDroop,
-          6,
-          delta,
-        ),
-        -1.4,
-        1.4,
-      );
-      rightArm.elbow.rotation.z = THREE.MathUtils.clamp(
-        THREE.MathUtils.damp(
-          rightArm.elbow.rotation.z,
-          rightElbowTarget + rez * 0.45 - gravityDroop,
-          6,
-          delta,
-        ),
-        -1.4,
-        1.4,
-      );
-      leftArm.wrist.rotation.z = THREE.MathUtils.clamp(
-        THREE.MathUtils.damp(
-          leftArm.wrist.rotation.z,
-          leftWristTarget + lwz * 0.7,
-          8,
-          delta,
-        ),
-        -0.65,
-        0.65,
-      );
-      rightArm.wrist.rotation.z = THREE.MathUtils.clamp(
-        THREE.MathUtils.damp(
-          rightArm.wrist.rotation.z,
-          rightWristTarget + rwz * 0.7,
-          8,
-          delta,
-        ),
-        -0.65,
-        0.65,
-      );
-
-      // Legs — subtle sway with spring
-      let leftFingerCurl = 0.14;
-      let rightFingerCurl = 0.14;
-      let leftForearmTwist = 0;
-      let rightForearmTwist = 0;
-      if (zone === "about" || zone === "work") {
-        leftFingerCurl = 0.06;
-        leftForearmTwist = -0.5;
-      }
-      if (heroGreeting || contactWaveActive) {
-        const waveClock = heroGreeting
-          ? heroWaveTime - 250
-          : (celebrationWaveActive ? timeSinceCelebration : timeSinceEntry) - 350;
-        rightFingerCurl = 0.04;
-        rightForearmTwist = 1.28 + Math.sin(waveClock * 0.014) * 0.08;
-      } else if (zone === "capabilities" || zone === "career") {
-        rightFingerCurl = 0.04;
-        rightForearmTwist = 0.5;
-      }
-      if (zone === "toolkit") {
-        leftFingerCurl = 0.08;
-        rightFingerCurl = 0.04;
-        leftForearmTwist = -0.08;
-        rightForearmTwist = 0.5;
-      }
-      leftFingerCurl *= gestureBlend;
-      rightFingerCurl *= gestureBlend;
-      leftForearmTwist *= gestureBlend;
-      rightForearmTwist *= gestureBlend;
-      leftArm.fingers.forEach((finger) => {
-        finger.rotation.x = THREE.MathUtils.damp(
-          finger.rotation.x,
-          leftFingerCurl,
-          6,
-          delta,
-        );
-      });
-      rightArm.fingers.forEach((finger) => {
-        finger.rotation.x = THREE.MathUtils.damp(
-          finger.rotation.x,
-          rightFingerCurl,
-          6,
-          delta,
-        );
-      });
-      leftArm.forearmTwistGroup.rotation.y = THREE.MathUtils.damp(
-        leftArm.forearmTwistGroup.rotation.y,
-        leftForearmTwist,
-        5,
-        delta,
-      );
-      rightArm.forearmTwistGroup.rotation.y = THREE.MathUtils.damp(
-        rightArm.forearmTwistGroup.rotation.y,
-        rightForearmTwist,
-        5,
-        delta,
-      );
-
-      const baseL = motion ? Math.sin(elapsed * 1.2) * 0.014 : 0;
-      const baseR = motion ? -Math.sin(elapsed * 1.2) * 0.014 : 0;
-      leftLeg.rotation.x  = baseL + llx * 0.12;
-      rightLeg.rotation.x = baseR + rlx * 0.12;
-
-      // ── FX ────────────────────────────────────────────────────────────────
-      const hologramOpacity =
-        phase === "gesture" &&
-        timeSinceEntry > 600 &&
-        (zone === "capabilities" || zone === "work" || zone === "toolkit")
-          ? 0.18
-          : 0;
-      hologramMaterial.opacity = THREE.MathUtils.damp(hologramMaterial.opacity, hologramOpacity, 4, delta);
-      const edgeMaterial = hologramEdges.material as THREE.LineBasicMaterial;
-      edgeMaterial.opacity = THREE.MathUtils.damp(edgeMaterial.opacity, hologramOpacity * 3.2, 4, delta);
-      hologram.rotation.y = motion ? Math.sin(elapsed * 0.7) * 0.08 : 0;
-      chestCore.rotation.y += motion ? delta * 1.2 : 0;
-      reactorOrangeRing.rotation.z -= motion ? delta * 0.2 : 0;
-      reactorLight.intensity = 16 + (motion ? Math.sin(elapsed * 2.4) * 2.5 : 0);
-      floorRing.rotation.z  += motion ? delta * 0.15 : 0;
       const travelEffect = motion && phase === "traveling";
-      const floorRingScale = travelEffect
-        ? 1 + Math.abs(Math.sin(timeSinceEntry * 0.015)) * 0.25
-        : 1;
-      floorRing.scale.setScalar(
-        THREE.MathUtils.damp(floorRing.scale.x, floorRingScale, 8, delta),
-      );
-      floorRingMaterial.opacity = THREE.MathUtils.damp(
-        floorRingMaterial.opacity,
-        travelEffect ? 0.82 : 0.5,
-        8,
-        delta,
-      );
-      particles.rotation.y  += motion ? delta * 0.025 : 0;
+      const delta = 1;
+      const springClamped = THREE.MathUtils.clamp(scrollVelocity + delta * 0.002, -50, 50);
+
+      if (celebrationWaveActive) {
+        leftShoulderTarget = -1.65;
+        leftElbowTarget = -0.9;
+        rightShoulderTarget = 1.65;
+        rightElbowTarget = 0.9;
+      } else if (active === "hero" && heroWaveTime >= 250 && heroWaveTime < 3600) {
+        const wave = Math.sin(elapsed * 4.8);
+        rightShoulderTarget = 1.68;
+        rightElbowTarget = 1.05 + wave * 0.07;
+      } else if (pointingTargets.has(active) && timeSinceEntry < gestureDuration[active]) {
+        const targetElement = pointingTargets.get(active);
+        if (targetElement) {
+          const solved = solvePointingPose(targetElement, rightArm, 1);
+          rightShoulderTarget = solved.shoulder;
+          rightElbowTarget = solved.elbow;
+        }
+      }
+
+      const gestureProgress = THREE.MathUtils.clamp(timeSinceEntry / 1000, 0, 1);
+      const gestureActive = gestureProgress * 6 - 15;
+      if (phase === "neutral" || (phase === "traveling" && timeSinceEntry >= 850)) {
+        const exitProgress = Math.min(1, Math.max(0, gestureActive));
+        const gestureEntryBlend = 1;
+        const blendResult = gestureEntryBlend * exitProgress;
+        if (travelEffect && springClamped && blendResult) {
+          // bounded travel blend
+        }
+      }
+
+      sp.lShoulder.pos = smoothDampValue(sp.lShoulder.pos, leftShoulderTarget, sp.lShoulder, 0.22, deltaSeconds);
+      sp.lElbow.pos = smoothDampValue(sp.lElbow.pos, leftElbowTarget, sp.lElbow, 0.22, deltaSeconds);
+      sp.rShoulder.pos = smoothDampValue(sp.rShoulder.pos, rightShoulderTarget, sp.rShoulder, 0.22, deltaSeconds);
+      sp.rElbow.pos = smoothDampValue(sp.rElbow.pos, rightElbowTarget, sp.rElbow, 0.22, deltaSeconds);
+
+      shoulderEuler.set(0, 0, sp.lShoulder.pos);
+      leftArm.shoulder.quaternion.slerp(leftShoulderTargetQuaternion.setFromEuler(shoulderEuler), 0.15);
+      leftArm.elbow.rotation.z = THREE.MathUtils.clamp(sp.lElbow.pos, -2.5, 2.5);
+      leftArm.wrist.rotation.z = THREE.MathUtils.clamp(sp.lElbow.pos * 0.2, -1.5, 1.5);
+      // elbow.rotation.z = THREE.MathUtils.clamp(sp.lElbow.pos, -2.5, 2.5);
+      // wrist.rotation.z = THREE.MathUtils.clamp(sp.lElbow.pos * 0.2, -1.5, 1.5);
+
+      shoulderEuler.set(0, 0, sp.rShoulder.pos);
+      rightArm.shoulder.quaternion.slerp(rightShoulderTargetQuaternion.setFromEuler(shoulderEuler), 0.15);
+      rightArm.elbow.rotation.z = THREE.MathUtils.clamp(sp.rElbow.pos, -2.5, 2.5);
+      rightArm.wrist.rotation.z = THREE.MathUtils.clamp(sp.rElbow.pos * 0.2, -1.5, 1.5);
+
+      scarfTail.rotation.z = -0.22 + Math.sin(elapsed * 2.5) * 0.08 + scrollVelocity * 0.01;
 
       renderer.render(scene, camera);
     };
 
-    const onVisibilityChange = () => {
-      if (!document.hidden && !isRendering) {
+    let animationFrameId = 0;
+    const animate = (time: number) => {
+      if (!isRendering) return;
+      const targetInterval = motionPausedRef.current ? 1000 / 12 : 1000 / 30;
+      if (time - lastRenderedAt >= targetInterval) {
+        lastRenderedAt = time;
         render();
       }
+      animationFrameId = requestAnimationFrame(animate);
     };
-    document.addEventListener("visibilitychange", onVisibilityChange);
 
-    zoneEntryTimeRef.current = performance.now();
-    render();
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isRendering = false;
+        if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+      } else {
+        isRendering = true;
+        clock.start();
+        lastRenderedAt = performance.now();
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    animationFrameId = requestAnimationFrame(animate);
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pointermove", onPointerMove);
       document.documentElement.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onResize);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
       renderer.domElement.removeEventListener("webglcontextlost", onContextLost);
-      scene.traverse((object) => {
-        if (
-          object instanceof THREE.Mesh ||
-          object instanceof THREE.Points ||
-          object instanceof THREE.LineSegments
-        ) {
-          object.geometry?.dispose();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach((material) => material.dispose());
-        }
-      });
+      if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
       renderer.dispose();
-      renderer.forceContextLoss();
-      if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
@@ -1502,12 +965,13 @@ const ProceduralCharacter = ({
       <div ref={mountRef} className="character-canvas" />
       {webglUnavailable && (
         <div className="character-fallback">
-          <span className="fallback-antenna" />
-          <span className="fallback-face">
+          <div className="fallback-face">
+            <span className="fallback-glasses" />
             <i />
             <i />
-          </span>
-          <span className="fallback-body" />
+          </div>
+          <div className="fallback-body" />
+          <div className="fallback-scarf" />
         </div>
       )}
     </div>

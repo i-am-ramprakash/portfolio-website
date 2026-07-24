@@ -714,11 +714,9 @@ const MainContainer = () => {
           <span>FULL-STACK SYSTEMS ENGINEER</span>
         </div>
         <p>
-          Original implementation by Ram Prakash Sah. Interaction direction inspired by{" "}
-          <a href="https://github.com/MoncyDev/Portfolio-Website" target="_blank" rel="noreferrer">
-            Moncy Yohannan
-          </a>
-          .
+          &copy; {new Date().getFullYear()} Ram Prakash Sah. All rights reserved. Based in Kathmandu, Nepal.
+          <br />
+          Built with React, TypeScript & Three.js.
         </p>
         <button type="button" onClick={() => scrollTo("home")}>
           Back to top <ArrowUp />
