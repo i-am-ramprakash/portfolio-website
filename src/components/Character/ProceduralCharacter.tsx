@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 type CharacterZone =
   | "hero"
@@ -478,6 +479,58 @@ const ProceduralCharacter = ({
     frontFill.position.set(0, 1.5, 8);
     scene.add(ambient, key, orangeRim, frontFill);
 
+    // Rigged 3D Polar Bear GLTF Loader
+    let gltfModel: THREE.Object3D | null = null;
+    let gltfMixer: THREE.AnimationMixer | null = null;
+    let gltfHeadBone: THREE.Object3D | null = null;
+    let gltfNeckBone: THREE.Object3D | null = null;
+
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      "/models/polar-bear.glb",
+      (gltf) => {
+        gltfModel = gltf.scene;
+        gltfModel.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+          const lowerName = child.name.toLowerCase();
+          if (lowerName.includes("head") || lowerName.includes("spine006")) {
+            gltfHeadBone = child;
+          }
+          if (lowerName.includes("neck") || lowerName.includes("spine005")) {
+            gltfNeckBone = child;
+          }
+        });
+
+        const bounds = new THREE.Box3().setFromObject(gltfModel);
+        const size = new THREE.Vector3();
+        bounds.getSize(size);
+        const center = new THREE.Vector3();
+        bounds.getCenter(center);
+
+        if (size.y > 0) {
+          const fitScale = 3.6 / size.y;
+          gltfModel.scale.setScalar(fitScale);
+          gltfModel.position.set(-center.x * fitScale, -center.y * fitScale + 1.8, -center.z * fitScale);
+        }
+
+        root.add(gltfModel);
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          gltfMixer = new THREE.AnimationMixer(gltfModel);
+          gltf.animations.forEach((clip) => {
+            gltfMixer?.clipAction(clip).play();
+          });
+        }
+      },
+      undefined,
+      (error) => {
+        console.warn("GLTF Load note:", error);
+      }
+    );
+
     root.updateWorldMatrix(true, true);
     const modelBounds = new THREE.Box3();
     [torso, scarfGroup, head, leftArm.shoulder, rightArm.shoulder].forEach((part) =>
@@ -831,6 +884,17 @@ const ProceduralCharacter = ({
       sp.headX.pos = smoothDampValue(sp.headX.pos, targetHeadX, sp.headX, 0.18, deltaSeconds);
       head.rotation.y = sp.headY.pos;
       head.rotation.x = sp.headX.pos;
+
+      if (gltfMixer) {
+        gltfMixer.update(deltaSeconds);
+      }
+      if (gltfHeadBone) {
+        gltfHeadBone.rotation.y = THREE.MathUtils.lerp(gltfHeadBone.rotation.y, sp.headY.pos, 0.12);
+        gltfHeadBone.rotation.x = THREE.MathUtils.lerp(gltfHeadBone.rotation.x, sp.headX.pos, 0.12);
+      }
+      if (gltfNeckBone) {
+        gltfNeckBone.rotation.x = THREE.MathUtils.lerp(gltfNeckBone.rotation.x, sp.headX.pos * 0.4, 0.12);
+      }
 
       pupilTarget.set(
         THREE.MathUtils.clamp(gazeDeltaX * 0.03, -0.035, 0.035),

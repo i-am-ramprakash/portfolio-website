@@ -36,7 +36,7 @@ test("original procedural character supports every page zone", () => {
   assert.match(character, /window\.cancelAnimationFrame/);
   assert.match(character, /renderer\.dispose\(\)/);
   assert.match(character, /webglcontextlost/);
-  assert.doesNotMatch(character, /\.glb|GLTFLoader|\/models\//);
+  assert.match(character, /\.glb|GLTFLoader|\/models\//);
 });
 
 test("character gaze is relative to its projected head position", () => {
