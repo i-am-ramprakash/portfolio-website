@@ -401,36 +401,9 @@ const ProceduralCharacter = ({
 
     // Coffee Mug Accessory (Used in "About" Section)
     const coffeeMug = new THREE.Group();
-    coffeeMug.position.set(-0.35, -0.12, 0.22);
-    leftArm.wrist.add(coffeeMug);
-
-    const mugBody = applyShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.32, 16), scarfOrange));
-    coffeeMug.add(mugBody);
-    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.03, 8, 16), scarfOrange);
-    mugHandle.position.set(-0.14, 0, 0);
-    coffeeMug.add(mugHandle);
-    coffeeMug.visible = false;
-
-    // Holographic Tech Tablet Accessory (Used in "Toolkit" Section)
-    const hologram = new THREE.Group();
-    hologram.position.set(1.85, 1.25, 0.15);
-    root.add(hologram);
-
-    const hologramMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff6600,
-      transparent: true,
-      opacity: 0,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const hologramPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.3), hologramMaterial);
-    hologram.add(hologramPanel);
-
-    const hologramEdges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(hologramPanel.geometry),
-      new THREE.LineBasicMaterial({ color: 0xffa866, transparent: true, opacity: 0 }),
-    );
-    hologram.add(hologramEdges);
+    // 3D GLTF Polar Bear Mascot Root
+    const polarBearContainer = new THREE.Group();
+    root.add(polarBearContainer);
 
     // Floor Ring Light
     const floorRingMaterial = new THREE.MeshBasicMaterial({
@@ -479,15 +452,20 @@ const ProceduralCharacter = ({
     frontFill.position.set(0, 1.5, 8);
     scene.add(ambient, key, orangeRim, frontFill);
 
+    // Accessory declarations
+    const hologramMaterial = { opacity: 0 };
+    const hologramEdges = { material: { opacity: 0 } };
+
     // Rigged 3D Polar Bear GLTF Loader
     let gltfModel: THREE.Object3D | null = null;
     let gltfMixer: THREE.AnimationMixer | null = null;
     let gltfHeadBone: THREE.Object3D | null = null;
     let gltfNeckBone: THREE.Object3D | null = null;
 
+    const gltfUrl = `${import.meta.env.BASE_URL}models/polar-bear.glb`.replace(/([^:]\/)\/+/g, "$1");
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
-      "/models/polar-bear.glb",
+      gltfUrl,
       (gltf) => {
         gltfModel = gltf.scene;
         gltfModel.traverse((child) => {
@@ -504,6 +482,13 @@ const ProceduralCharacter = ({
           }
         });
 
+        // Hide procedural fallback primitives when GLTF is loaded
+        torso.visible = false;
+        scarfGroup.visible = false;
+        head.visible = false;
+        leftArm.shoulder.visible = false;
+        rightArm.shoulder.visible = false;
+
         const bounds = new THREE.Box3().setFromObject(gltfModel);
         const size = new THREE.Vector3();
         bounds.getSize(size);
@@ -511,9 +496,13 @@ const ProceduralCharacter = ({
         bounds.getCenter(center);
 
         if (size.y > 0) {
-          const fitScale = 3.6 / size.y;
+          const fitScale = 3.2 / size.y;
           gltfModel.scale.setScalar(fitScale);
-          gltfModel.position.set(-center.x * fitScale, -center.y * fitScale + 1.8, -center.z * fitScale);
+          gltfModel.position.set(
+            -center.x * fitScale,
+            -bounds.min.y * fitScale,
+            -center.z * fitScale
+          );
         }
 
         root.add(gltfModel);
