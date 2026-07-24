@@ -461,6 +461,8 @@ const ProceduralCharacter = ({
     let gltfMixer: THREE.AnimationMixer | null = null;
     let gltfHeadBone: THREE.Object3D | null = null;
     let gltfNeckBone: THREE.Object3D | null = null;
+    let initialHeadRotation: THREE.Euler | null = null;
+    let initialNeckRotation: THREE.Euler | null = null;
 
     const gltfUrl = `${import.meta.env.BASE_URL}models/polar-bear.glb`.replace(/([^:]\/)\/+/g, "$1");
     const gltfLoader = new GLTFLoader();
@@ -474,11 +476,14 @@ const ProceduralCharacter = ({
             child.receiveShadow = true;
           }
           const lowerName = child.name.toLowerCase();
-          if (lowerName.includes("head") || lowerName.includes("spine006")) {
+          const isBone = child instanceof THREE.Bone || (child as unknown as { isBone?: boolean }).isBone;
+          if (isBone && (lowerName.includes("head") || lowerName.includes("spine006"))) {
             gltfHeadBone = child;
+            initialHeadRotation = child.rotation.clone();
           }
-          if (lowerName.includes("neck") || lowerName.includes("spine005")) {
+          if (isBone && (lowerName.includes("neck") || lowerName.includes("spine005"))) {
             gltfNeckBone = child;
+            initialNeckRotation = child.rotation.clone();
           }
         });
 
@@ -877,12 +882,12 @@ const ProceduralCharacter = ({
       if (gltfMixer) {
         gltfMixer.update(deltaSeconds);
       }
-      if (gltfHeadBone) {
-        gltfHeadBone.rotation.y = THREE.MathUtils.lerp(gltfHeadBone.rotation.y, sp.headY.pos, 0.12);
-        gltfHeadBone.rotation.x = THREE.MathUtils.lerp(gltfHeadBone.rotation.x, sp.headX.pos, 0.12);
+      if (gltfHeadBone && initialHeadRotation) {
+        gltfHeadBone.rotation.y = THREE.MathUtils.lerp(gltfHeadBone.rotation.y, initialHeadRotation.y + sp.headY.pos, 0.12);
+        gltfHeadBone.rotation.x = THREE.MathUtils.lerp(gltfHeadBone.rotation.x, initialHeadRotation.x + sp.headX.pos, 0.12);
       }
-      if (gltfNeckBone) {
-        gltfNeckBone.rotation.x = THREE.MathUtils.lerp(gltfNeckBone.rotation.x, sp.headX.pos * 0.4, 0.12);
+      if (gltfNeckBone && initialNeckRotation) {
+        gltfNeckBone.rotation.x = THREE.MathUtils.lerp(gltfNeckBone.rotation.x, initialNeckRotation.x + sp.headX.pos * 0.4, 0.12);
       }
 
       pupilTarget.set(
