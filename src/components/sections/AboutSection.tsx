@@ -22,6 +22,7 @@ const AboutSection = ({ reducedMotion }: AboutSectionProps) => (
       description="A pragmatic engineering approach grounded in reliability, usability, and real product needs."
       reducedMotion={reducedMotion}
     />
+    <div className="mobile-character-slot" data-mobile-character-anchor aria-hidden="true" />
     <div className="about-grid" data-character-anchor>
       <Reveal className="about-lead" delay={70} reducedMotion={reducedMotion}>
         <h3>I build across the full product stack.</h3>

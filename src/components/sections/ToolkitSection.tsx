@@ -24,6 +24,7 @@ const ToolkitSection = ({ reducedMotion }: ToolkitSectionProps) => (
       description="A practical toolkit for building, integrating, testing, and delivering complete products."
       reducedMotion={reducedMotion}
     />
+    <div className="mobile-character-slot" data-mobile-character-anchor aria-hidden="true" />
     <div className="toolkit-grid" data-character-anchor>
       {digitalSkills.map((group, index) => (
         <Reveal

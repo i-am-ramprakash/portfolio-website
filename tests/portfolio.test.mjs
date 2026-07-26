@@ -307,7 +307,7 @@ test("every non-Hero bear stays centered while scrolling with its owning section
   assert.match(character, /const stageCenter = canvasRect\.top \+ viewportHeight \/ 2/);
   assert.match(character, /const sectionCenterOffset = sectionCenter - stageCenter/);
   assert.match(character, /sectionCenterOffset \/ Math\.max\(viewportHeight, 1\)/);
-  assert.match(character, /if \(section === "home"\) return resolveHeroScrollAnchor\(\)/);
+  assert.match(character, /if \(section === "home" && viewportWidth > 820\) return resolveHeroScrollAnchor\(\)/);
   assert.match(character, /return resolveNarrativeScrollAnchor\(section\)/);
   assert.match(character, /applyTransform\(resolveSectionAnchor\(requestedSection\), 1\)/);
 });
@@ -334,6 +334,29 @@ test("character anchors follow each section's actual data area", () => {
   assert.match(toolkit, /className="toolkit-grid" data-character-anchor/);
   assert.match(contact, /className="contact-grid" data-character-anchor/);
   assert.match(reveal, /data-character-anchor=\{characterAnchor \? "" : undefined\}/);
+});
+
+test("mobile sections use movable circular character viewports without changing desktop anchors", () => {
+  for (const source of [hero, about, capabilities, career, work, toolkit, contact, footer]) {
+    assert.match(source, /className="mobile-character-slot[^"]*"[\s\S]*data-mobile-character-anchor/);
+  }
+  assert.match(character, /viewportWidth <= 820[\s\S]*querySelector<HTMLElement>\("\[data-mobile-character-anchor\]"\)/);
+  assert.match(character, /mobileAnchor[\s\S]*\[mobileAnchor\][\s\S]*querySelectorAll<HTMLElement>\("\[data-character-anchor\]"\)/);
+  assert.match(css, /\.mobile-character-slot\s*\{\s*display: none/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*\.mobile-character-slot\s*\{[\s\S]*display: block/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*\.character-stage\s*\{[\s\S]*clip-path: circle/);
+  assert.match(css, /\.character-stage::after\s*\{[\s\S]*border: 3px solid var\(--accent\)[\s\S]*border-radius: 50%/);
+  assert.match(css, /\.narrative-section\[data-character-side="left"\] > \.mobile-character-slot,[\s\S]*\.narrative-section\[data-character-side="right"\] > \.mobile-character-slot\s*\{[\s\S]*min\(42vw, 42vh\)/);
+  assert.match(character, /syncMobileCharacterViewport[\s\S]*--mobile-character-x[\s\S]*--mobile-character-y[\s\S]*--mobile-character-radius/);
+  assert.match(character, /resolveViewportSection[\s\S]*window\.innerHeight \* 0\.46/);
+  assert.match(character, /requestedSection = resolveViewportSection\(\)[\s\S]*syncMobileCharacterViewport\(\)/);
+  assert.match(character, /headBone = modelRoot\.getObjectByName\("mixamorigHead"\)/);
+  assert.match(character, /frameCompactCharacterPortrait[\s\S]*desiredScreenY = slotRect\.top \+ slotRect\.height \* 0\.3[\s\S]*headBone\.getWorldPosition/);
+  assert.match(character, /syncSectionToScroll\(\);[\s\S]*frameCompactCharacterPortrait\(\);[\s\S]*syncMobileCharacterViewport\(\)/);
+  assert.match(character, /if \(viewportWidth <= 820\) \{[\s\S]*applyTransform\(resolveSectionAnchor\(section\), 1\)[\s\S]*playSectionAnimation\(section, token\)/);
+  assert.match(character, /const visibleSection = resolveViewportSection\(\)[\s\S]*visibleSection !== requestedSection/);
+  assert.match(character, /section === "home" && viewportWidth > 820/);
+  assert.match(character, /viewportWidth <= 359[\s\S]*section === "home" \? 0\.64[\s\S]*viewportWidth <= 420[\s\S]*section === "home" \? 0\.7/);
 });
 
 test("the Work typing scene includes a synchronized orange-and-white workstation", () => {
@@ -538,6 +561,11 @@ test("responsive safeguards cover desktop, tablet, mobile, and wrapping", () => 
   assert.match(css, /min-width: 320px/);
   assert.match(css, /grid-template-columns: 1fr/);
   assert.match(css, /flex-wrap: wrap/);
+  assert.match(css, /@media \(max-width: 620px\)[\s\S]*--header-height: 64px/);
+  assert.match(css, /@media \(max-width: 620px\)[\s\S]*\.hero-copy\s*\{[\s\S]*padding-bottom: 0/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*\.character-signature-loader\s*\{[\s\S]*left: var\(--mobile-character-x, 50%\)/);
+  assert.match(character, /mobileX: -0\.12,[\s\S]*mobileY: -0\.27,[\s\S]*mobileScale: 0\.92,[\s\S]*mobileRotation: -0\.08/);
+  assert.match(character, /viewportWidth <= 359[\s\S]*section === "home" \? 0\.64[\s\S]*viewportWidth <= 420[\s\S]*section === "home" \? 0\.7/);
 });
 
 test("metadata and typography reflect the redesigned system", () => {

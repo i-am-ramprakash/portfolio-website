@@ -44,6 +44,12 @@ const HeroSection = ({ reducedMotion, onNavigate }: HeroSectionProps) => (
         </div>
       </Reveal>
 
+      <div
+        className="mobile-character-slot mobile-character-slot-hero"
+        data-mobile-character-anchor
+        aria-hidden="true"
+      />
+
       <Reveal className="hero-aside" delay={120} reducedMotion={reducedMotion}>
         <span>What I bring</span>
         <ul>

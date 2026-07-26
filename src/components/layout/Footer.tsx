@@ -6,6 +6,11 @@ interface FooterProps {
 
 const Footer = ({ onBackToTop }: FooterProps) => (
   <footer id="footer" className="site-footer">
+    <div
+      className="mobile-character-slot mobile-character-slot-footer"
+      data-mobile-character-anchor
+      aria-hidden="true"
+    />
     <div className="footer-identity">
       <b className="tilted-card-text identity-card-text">Ramprakash Sah</b>
       <span>Full-Stack Systems Engineer</span>

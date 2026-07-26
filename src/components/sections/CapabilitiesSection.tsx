@@ -47,6 +47,7 @@ const CapabilitiesSection = ({ reducedMotion }: CapabilitiesSectionProps) => (
       description="Engineering capabilities that cover the service layer, the interface, and the interactions between them."
       reducedMotion={reducedMotion}
     />
+    <div className="mobile-character-slot" data-mobile-character-anchor aria-hidden="true" />
     <div className="capability-grid" data-character-anchor>
       {capabilities.map((capability, index) => {
         const Icon = capability.icon;

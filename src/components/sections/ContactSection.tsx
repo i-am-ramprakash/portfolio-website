@@ -47,6 +47,7 @@ const ContactSection = ({ reducedMotion }: ContactSectionProps) => {
         description="Share the context and I’ll respond through the email address you provide."
         reducedMotion={reducedMotion}
       />
+      <div className="mobile-character-slot" data-mobile-character-anchor aria-hidden="true" />
       <div className="contact-grid" data-character-anchor>
         <Reveal className="contact-intro" delay={80} reducedMotion={reducedMotion}>
           <h3>Let&apos;s make something work.</h3>

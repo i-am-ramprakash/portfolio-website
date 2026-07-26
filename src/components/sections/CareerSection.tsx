@@ -23,6 +23,7 @@ const CareerSection = ({ reducedMotion }: CareerSectionProps) => (
       description="Enterprise delivery and product development across India and Nepal."
       reducedMotion={reducedMotion}
     />
+    <div className="mobile-character-slot" data-mobile-character-anchor aria-hidden="true" />
     <div className="career-list" data-character-anchor>
       {[...experiences].reverse().map((experience, index) => (
         <Reveal

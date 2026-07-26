@@ -132,11 +132,13 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    const characterStage = container.closest<HTMLElement>(".character-stage");
 
     let disposed = false;
     let ready = false;
     let pageVisible = !document.hidden;
     let frameId = 0;
+    let resizeFrameId = 0;
     let lastFrameTime = performance.now();
     let viewportWidth = 1;
     let viewportHeight = 1;
@@ -154,6 +156,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
     let mixer: THREE.AnimationMixer | null = null;
     let wrapper: THREE.Group | null = null;
     let modelRoot: THREE.Group | null = null;
+    let headBone: THREE.Object3D | null = null;
     let workstation: THREE.Group | null = null;
     let groundShadow: THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial> | null = null;
 
@@ -349,83 +352,89 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
           y: -0.44,
           scale: 2.50,
           rotation: -0.34,
-          mobileX: 0.26,
-          mobileY: -0.4,
-          mobileScale: 0.72,
-          mobileRotation: -0.12,
+          mobileX: -0.12,
+          mobileY: -0.27,
+          mobileScale: 0.92,
+          mobileRotation: -0.08,
         },
         about: {
           x: 0.34,
           y: 0.04,
           scale: 1.14,
           rotation: -0.82,
-          mobileX: 0.28,
-          mobileY: -0.18,
-          mobileScale: 0.58,
-          mobileRotation: -0.5,
+          mobileX: -0.12,
+          mobileY: -0.22,
+          mobileScale: 0.78,
+          mobileRotation: -0.18,
         },
         capabilities: {
           x: -0.34,
           y: -0.02,
           scale: 1.14,
           rotation: 0.82,
-          mobileX: -0.28,
-          mobileY: -0.23,
-          mobileScale: 0.58,
-          mobileRotation: 0.5,
+          mobileX: -0.12,
+          mobileY: -0.22,
+          mobileScale: 0.78,
+          mobileRotation: 0.18,
         },
         career: {
           x: 0.34,
           y: -0.02,
           scale: 1.14,
           rotation: -0.82,
-          mobileX: 0.28,
-          mobileY: -0.23,
-          mobileScale: 0.58,
-          mobileRotation: -0.5,
+          mobileX: -0.12,
+          mobileY: -0.22,
+          mobileScale: 0.78,
+          mobileRotation: -0.18,
         },
         work: {
           x: -0.34,
           y: 0.20,
           scale: 1.14,
           rotation: 0.82,
-          mobileX: -0.28,
-          mobileY: -0.01,
-          mobileScale: 0.58,
-          mobileRotation: 0.5,
+          mobileX: -0.12,
+          mobileY: -0.18,
+          mobileScale: 0.72,
+          mobileRotation: 0,
         },
         toolkit: {
           x: 0.34,
           y: -0.02,
           scale: 1.14,
           rotation: -0.82,
-          mobileX: 0.28,
-          mobileY: -0.23,
-          mobileScale: 0.58,
-          mobileRotation: -0.5,
+          mobileX: -0.12,
+          mobileY: -0.22,
+          mobileScale: 0.78,
+          mobileRotation: -0.18,
         },
         contact: {
           x: -0.34,
           y: -0.02,
           scale: 1.14,
           rotation: 0.82,
-          mobileX: -0.28,
-          mobileY: -0.23,
-          mobileScale: 0.58,
-          mobileRotation: 0.5,
+          mobileX: -0.12,
+          mobileY: -0.22,
+          mobileScale: 0.78,
+          mobileRotation: 0.18,
         },
         footer: {
           x: 0.3,
           y: -0.02,
           scale: 1.14,
           rotation: -0.5,
-          mobileX: 0.26,
-          mobileY: -0.23,
-          mobileScale: 0.58,
-          mobileRotation: -0.35,
+          mobileX: -0.12,
+          mobileY: -0.22,
+          mobileScale: 0.78,
+          mobileRotation: 0,
         },
       };
       const layout = layouts[section];
+      const configuredMobileScale = layout.mobileScale ?? 0.39;
+      const responsiveMobileScale = viewportWidth <= 359
+        ? (section === "home" ? 0.64 : configuredMobileScale * 0.81)
+        : viewportWidth <= 420
+          ? (section === "home" ? 0.7 : configuredMobileScale * 0.9)
+          : configuredMobileScale;
       return {
         position: new THREE.Vector3(
           visibleWidth * (compact ? layout.mobileX ?? Math.sign(layout.x) * 0.31 : layout.x),
@@ -433,7 +442,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
           0,
         ),
         rotation: compact ? layout.mobileRotation ?? layout.rotation ?? 0 : layout.rotation ?? 0,
-        scale: baseScale * (compact ? layout.mobileScale ?? 0.39 : layout.scale),
+        scale: baseScale * (compact ? responsiveMobileScale : layout.scale),
       };
     };
 
@@ -454,7 +463,13 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       if (!sectionElement) return anchor;
 
       const sectionRect = sectionElement.getBoundingClientRect();
-      const contentRects = [...sectionElement.querySelectorAll<HTMLElement>("[data-character-anchor]")]
+      const mobileAnchor = viewportWidth <= 820
+        ? sectionElement.querySelector<HTMLElement>("[data-mobile-character-anchor]")
+        : null;
+      const anchorElements = mobileAnchor
+        ? [mobileAnchor]
+        : [...sectionElement.querySelectorAll<HTMLElement>("[data-character-anchor]")];
+      const contentRects = anchorElements
         .map((element) => element.getBoundingClientRect());
       const canvasRect = container.getBoundingClientRect();
       const contentTop = contentRects.length
@@ -472,8 +487,80 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
     };
 
     const resolveSectionAnchor = (section: CharacterSection) => {
-      if (section === "home") return resolveHeroScrollAnchor();
+      if (section === "home" && viewportWidth > 820) return resolveHeroScrollAnchor();
       return resolveNarrativeScrollAnchor(section);
+    };
+
+    const syncMobileCharacterViewport = () => {
+      if (!characterStage) return;
+      if (window.innerWidth > 820) {
+        characterStage.style.removeProperty("--mobile-character-x");
+        characterStage.style.removeProperty("--mobile-character-y");
+        characterStage.style.removeProperty("--mobile-character-radius");
+        return;
+      }
+
+      const section = document.getElementById(requestedSection);
+      const slot = section?.querySelector<HTMLElement>("[data-mobile-character-anchor]");
+      if (!slot) return;
+
+      const stageRect = characterStage.getBoundingClientRect();
+      const slotRect = slot.getBoundingClientRect();
+      const radius = Math.max(Math.min(slotRect.width, slotRect.height) / 2, 1);
+      const centerX = slotRect.left - stageRect.left + slotRect.width / 2;
+      const centerY = slotRect.top - stageRect.top + slotRect.height / 2;
+      characterStage.style.setProperty("--mobile-character-x", `${centerX}px`);
+      characterStage.style.setProperty("--mobile-character-y", `${centerY}px`);
+      characterStage.style.setProperty("--mobile-character-radius", `${radius}px`);
+    };
+
+    const resolveViewportSection = (): CharacterSection => {
+      const focusLine = window.innerHeight * 0.46;
+      const sections = SECTION_ORDER
+        .map((section) => document.getElementById(section))
+        .filter((section): section is HTMLElement => Boolean(section));
+      const containingFocus = sections.find((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.top <= focusLine && rect.bottom > focusLine;
+      });
+      const nearest = containingFocus ?? sections.reduce<HTMLElement | null>((closest, section) => {
+        if (!closest) return section;
+        const distance = Math.abs(section.getBoundingClientRect().top - focusLine);
+        const closestDistance = Math.abs(closest.getBoundingClientRect().top - focusLine);
+        return distance < closestDistance ? section : closest;
+      }, null);
+      return toCharacterSection(nearest?.id ?? requestedSection);
+    };
+
+    const frameCompactCharacterPortrait = () => {
+      if (viewportWidth > 820 || !wrapper || !headBone) return;
+      const section = document.getElementById(requestedSection);
+      const slot = section?.querySelector<HTMLElement>("[data-mobile-character-anchor]");
+      if (!slot) return;
+
+      const canvasRect = container.getBoundingClientRect();
+      const slotRect = slot.getBoundingClientRect();
+      const desiredScreenX = slotRect.left + slotRect.width / 2;
+      const desiredScreenY = slotRect.top + slotRect.height * 0.3;
+      const desiredWorldX =
+        ((desiredScreenX - canvasRect.left - viewportWidth / 2) / Math.max(viewportWidth, 1)) * visibleWidth;
+      const desiredWorldY =
+        -((desiredScreenY - canvasRect.top - viewportHeight / 2) / Math.max(viewportHeight, 1)) * visibleHeight;
+
+      wrapper.updateMatrixWorld(true);
+      const headWorld = headBone.getWorldPosition(new THREE.Vector3());
+      const offsetX = desiredWorldX - headWorld.x;
+      const offsetY = desiredWorldY - headWorld.y;
+      wrapper.position.x += offsetX;
+      wrapper.position.y += offsetY;
+      if (workstation?.visible) {
+        workstation.position.x += offsetX;
+        workstation.position.y += offsetY;
+      }
+      if (groundShadow?.visible) {
+        groundShadow.position.x += offsetX;
+        groundShadow.position.y += offsetY;
+      }
     };
 
     const setCharacterOpacity = (opacity: number) => {
@@ -679,6 +766,16 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       requestedSection = section;
       if (!ready) return;
       if (!force && currentSection === section && !activeMotion) return;
+      if (viewportWidth <= 820) {
+        cancelSequence();
+        currentSection = section;
+        applyTransform(resolveSectionAnchor(section), 1);
+        container.dataset.characterDestination = section;
+        container.dataset.characterSettled = section;
+        const token = sequenceVersion;
+        void playSectionAnimation(section, token);
+        return;
+      }
       const currentIndex = SECTION_ORDER.indexOf(currentSection);
       const targetIndex = SECTION_ORDER.indexOf(section);
       if (Math.abs(currentIndex - targetIndex) === 1) setCharacterOpacity(0);
@@ -689,6 +786,11 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
     };
 
     const handleSectionBoundaryScroll = () => {
+      if (viewportWidth <= 820) {
+        const visibleSection = resolveViewportSection();
+        if (visibleSection !== requestedSection) requestSection(visibleSection);
+        return;
+      }
       const requestedIndex = SECTION_ORDER.indexOf(requestedSection);
       if (requestedIndex < 0) return;
       const characterStageTop = container.getBoundingClientRect().top;
@@ -763,19 +865,28 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       if (mixer && !reducedMotionRef.current) mixer.update(delta);
       updateMotion(now);
       syncSectionToScroll();
+      frameCompactCharacterPortrait();
+      syncMobileCharacterViewport();
       configureSectionClip();
       renderer?.render(scene, camera);
       if (pageVisible) frameId = window.requestAnimationFrame(render);
     };
 
     const handleResize = () => {
-      updateViewport();
-      if (!ready) return;
-      cancelSequence();
-      currentSection = requestedSection;
-      applyTransform(resolveSectionAnchor(requestedSection), 1);
-      const token = sequenceVersion;
-      void playSectionAnimation(requestedSection, token);
+      window.cancelAnimationFrame(resizeFrameId);
+      resizeFrameId = window.requestAnimationFrame(() => {
+        resizeFrameId = 0;
+        updateViewport();
+        requestedSection = resolveViewportSection();
+        activeSectionRef.current = requestedSection;
+        syncMobileCharacterViewport();
+        if (!ready) return;
+        cancelSequence();
+        currentSection = requestedSection;
+        applyTransform(resolveSectionAnchor(requestedSection), 1);
+        const token = sequenceVersion;
+        void playSectionAnimation(requestedSection, token);
+      });
     };
 
     const handleVisibilityChange = () => {
@@ -814,6 +925,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
         modelRoot.position.sub(center);
+        headBone = modelRoot.getObjectByName("mixamorigHead") ?? null;
         baseScale = 5.8 / (Math.max(size.x, size.y, size.z) || 1);
         modelRoot.traverse((child) => {
           const mesh = child as THREE.Mesh;
@@ -866,6 +978,10 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
 
     sectionHandlerRef.current = (section) => {
       if (section === requestedSection) return;
+      if (viewportWidth <= 820) {
+        requestSection(section);
+        return;
+      }
       const requestedIndex = SECTION_ORDER.indexOf(requestedSection);
       const incomingIndex = SECTION_ORDER.indexOf(section);
       if (Math.abs(requestedIndex - incomingIndex) === 1) {
@@ -890,6 +1006,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       abortController.abort();
       cancelSequence();
       window.cancelAnimationFrame(frameId);
+      window.cancelAnimationFrame(resizeFrameId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleSectionBoundaryScroll);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -905,6 +1022,9 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       renderer?.dispose();
       renderer?.forceContextLoss();
       renderer?.domElement.remove();
+      characterStage?.style.removeProperty("--mobile-character-x");
+      characterStage?.style.removeProperty("--mobile-character-y");
+      characterStage?.style.removeProperty("--mobile-character-radius");
     };
   }, []);
 

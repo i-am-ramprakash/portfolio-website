@@ -92,6 +92,12 @@ const WorkSection = ({ reducedMotion }: WorkSectionProps) => {
         reducedMotion={reducedMotion}
       />
 
+      <div
+        className="mobile-character-slot mobile-character-slot-work"
+        data-mobile-character-anchor
+        aria-hidden="true"
+      />
+
       <Reveal
         className={`project-carousel ${carouselPaused ? "is-paused" : ""} ${reducedMotion ? "is-reduced" : ""}`}
         characterAnchor
