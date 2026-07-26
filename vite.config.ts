@@ -6,13 +6,6 @@ export default defineConfig({
   plugins: [react()],
   build: {
     chunkSizeWarningLimit: 600,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          three: ['three'],
-        },
-      },
-    },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],

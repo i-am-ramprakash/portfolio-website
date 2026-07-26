@@ -1,17 +1,18 @@
-# Ram Prakash — Full-Stack Systems Engineer Portfolio
+# Ramprakash Sah — Full-Stack Systems Engineer Portfolio
 
-An orange, interactive portfolio built with **React**, **TypeScript**, **Vite**, and **Three.js**. It presents engineering projects, technical skills, professional experience, and direct contact paths.
+A restrained, text-led portfolio built with **React**, **TypeScript**, and **Vite**. It presents engineering projects, technical skills, professional experience, and direct contact paths through a solid light/dark design system.
 
 ---
 
 ## ✨ Features
 
-- 🌟 **Dynamic UI & Glassmorphism Design**: Sleek dark-mode aesthetic with smooth scrolling, interactive cards, and micro-animations.
+- 🌗 **Complete Light & Dark Themes**: Persistent, system-aware themes with solid, high-contrast surfaces.
 - 📱 **Fully Responsive**: Optimized for desktop, tablet, and mobile displays.
-- 🚀 **Featured Projects Showcase**: Detailed interactive cards highlighting project role, status, key outcomes, and tech stacks.
-- 💼 **Professional Experience Timeline**: Interactive career roadmap featuring TCS and Mentor Friends achievements.
+- 🚀 **Text-Led Project Showcase**: Detailed cards highlighting project role, status, key outcomes, architecture, and tech stacks without image dependencies.
+- 💼 **Professional Experience Timeline**: Reverse-chronological career roadmap featuring TCS and Mentor Friends achievements.
 - 🛠️ **Categorized Skills Matrix**: Technical skills grouped by Frontend, Backend, Database, Cloud & DevOps, Data Science, and Design.
 - 📬 **Interactive Contact Form**: Direct message integration.
+- ♿ **Accessible Scroll Narrative**: Reversible word assembly, section staging, solid-panel transitions, reduced-motion alternatives, and keyboard/focus safeguards.
 
 ---
 
@@ -20,9 +21,9 @@ An orange, interactive portfolio built with **React**, **TypeScript**, **Vite**,
 - **Framework**: React 18
 - **Language**: TypeScript
 - **Build Tool**: Vite
-- **Styling**: Vanilla CSS & Custom Design System (`index.css`) / Tailwind CSS
+- **Styling**: Vanilla CSS and a token-based custom design system (`index.css`)
 - **Icons**: Lucide React (`lucide-react`)
-- **Interactive character**: Three.js primitives with section-aware animation and a CSS/WebGL fallback
+- **Deferred character**: The Three.js polar-bear implementation and model remain preserved for a later progressive-enhancement phase. Empty desktop character lanes already alternate across sections, but the model is not loaded by the current site.
 - **Deployment**: Vercel / GitHub Pages
 
 ---
@@ -100,4 +101,4 @@ The output will be generated in the `dist/` directory ready for deployment.
 
 ## Design inspiration and attribution
 
-The interaction direction is inspired by [Moncy Yohannan's Portfolio Website](https://github.com/MoncyDev/Portfolio-Website). This project does not copy its source code, protected 3D assets, or complete experience. The orange visual system, responsive composition, and procedural character are original implementations using Ram Prakash Sah's content. Attribution also appears in the website footer.
+The interaction direction is inspired by [Moncy Yohannan's Portfolio Website](https://github.com/MoncyDev/Portfolio-Website). This project does not copy its source code, protected 3D assets, or complete experience. The orange visual system, responsive composition, and procedural character are original implementations using Ramprakash Sah's content.

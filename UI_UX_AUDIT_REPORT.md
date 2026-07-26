@@ -6,7 +6,7 @@ Audit type: UI/UX, responsive design, accessibility, content, performance, SEO, 
 
 ## Executive summary
 
-> **Remediation status — complete:** The findings below document the pre-remediation baseline. The site has since been rebuilt as one coherent, original orange design system with the owner's real content. It uses an original procedural character as a lazy progressive enhancement, with a CSS fallback when WebGL is unavailable.
+> **Remediation status — superseded by the July 2026 solid-system rebuild:** The findings below document the original pre-remediation baseline. The current site uses a componentized, text-led light/dark design with solid surfaces, restrained orange accents, responsive cards, and a reversible accessible scroll narrative. Project and social-preview imagery have been removed. Alternating empty character lanes prepare for the preserved polar-bear implementation, which is not mounted or loaded by the current site.
 
 The original audit found these serious user-facing risks:
 
@@ -24,9 +24,9 @@ Original assessment: **needed stabilization before launch**. Current verificatio
 - Replaced the conflicting interfaces with one responsive React/CSS composition.
 - Added skip navigation, semantic landmarks, keyboard-operable controls, visible focus states, and an accessible compact menu.
 - Added reduced-motion behavior, fine-pointer-only cursor effects, WebGL failure handling, tab visibility pausing, and complete renderer cleanup.
-- Replaced the external model dependency with an original character assembled from Three.js primitives; the character responds to the active page section without blocking access to content.
+- Preserved the polar-bear code and local model for a later phase while removing Three.js and the model from the active page dependency path.
 - Added clear hero, project, GitHub, LinkedIn, email, and contact-form conversion paths using the owner's real data.
-- Optimized project media as lazy WebP assets and isolated the character renderer in a lazy JavaScript chunk.
+- Removed project imagery entirely and rebuilt the work section as text-led case-study cards.
 - Added structured profile data, corrected social destinations, and supplied a 1200×630 orange social preview.
 - Added automated checks for page structure, accessibility state, character fallbacks, actual owner links, optimized media, responsive safeguards, metadata, and attribution.
 - `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` pass after remediation.

@@ -4,9 +4,12 @@ import { ContactFormData } from '../types';
 const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xqalzwbz';
 
 export const sendEmail = async (formData: ContactFormData): Promise<boolean> => {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12000);
   try {
     const response = await fetch(FORMSPREE_ENDPOINT, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -25,5 +28,7 @@ export const sendEmail = async (formData: ContactFormData): Promise<boolean> => 
   } catch (error) {
     console.error('Failed to send email:', error);
     return false;
+  } finally {
+    window.clearTimeout(timeout);
   }
 };
