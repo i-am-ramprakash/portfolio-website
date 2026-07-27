@@ -18,6 +18,7 @@ const sectionHeading = read("src/components/ui/SectionHeading.tsx");
 const narrative = read("src/hooks/useScrollNarrative.ts");
 const characterStage = read("src/components/layout/CharacterStage.tsx");
 const character = read("src/components/Character/PolarBear3DCanvas.tsx");
+const footerCharacter = read("src/components/Character/FooterPolarBearCanvas.tsx");
 const characterConfig = read("src/components/Character/characterConfig.ts");
 const theme = read("src/hooks/useTheme.ts");
 const email = read("src/services/emailService.ts");
@@ -101,12 +102,12 @@ test("the polar bear uses the minimal section-based FBX library", () => {
     "shared/polar-bear-base.fbx",
     "shared/polar-bear-idle-standing-loop.fbx",
     "shared/polar-bear-run-loop.fbx",
-    "about/polar-bear-listen-idle-loop.fbx",
-    "capabilities/polar-bear-present-right.fbx",
-    "career/polar-bear-proud-idle-loop.fbx",
+    "about/polar-bear-about-detective-loop.fbx",
+    "capabilities/polar-bear-capabilities-power-showcase-loop.fbx",
+    "career/polar-bear-career-victory-loop.fbx",
     "work/polar-bear-type-loop.fbx",
-    "toolkit/polar-bear-use-tool-loop.fbx",
-    "contact/polar-bear-contact-idle-loop.fbx",
+    "toolkit/polar-bear-toolkit-tech-magician-loop.fbx",
+    "contact/polar-bear-contact-big-invitation-loop.fbx",
     "footer/polar-bear-thank-you-wave.fbx",
   ];
   for (const asset of requiredAssets) {
@@ -225,12 +226,12 @@ test("one persistent character stage is prepared for continuous section scenes",
 
 test("the character uses one cancellable run transition and one animation per section", () => {
   assert.match(characterConfig, /SECTION_SCENES/);
-  assert.match(characterConfig, /about: \{ clip: "listenIdle"/);
-  assert.match(characterConfig, /capabilities: \{ clip: "presentRight"/);
-  assert.match(characterConfig, /career: \{ clip: "proudIdle"/);
+  assert.match(characterConfig, /about: \{ clip: "aboutDetective"/);
+  assert.match(characterConfig, /capabilities: \{ clip: "capabilitiesPowerShowcase"/);
+  assert.match(characterConfig, /career: \{ clip: "careerVictory"/);
   assert.match(characterConfig, /work: \{ clip: "typeLoop"/);
-  assert.match(characterConfig, /toolkit: \{ clip: "useToolLoop"/);
-  assert.match(characterConfig, /contact: \{ clip: "contactIdle"/);
+  assert.match(characterConfig, /toolkit: \{ clip: "toolkitTechMagician"/);
+  assert.match(characterConfig, /contact: \{ clip: "contactBigInvitation"/);
   assert.match(characterConfig, /footer: \{ clip: "thankYouWave"/);
   assert.match(characterConfig, /CORE_CLIPS: ClipKey\[\] = \["idleStanding", "runLoop"\]/);
   assert.match(character, /const requestSection/);
@@ -313,9 +314,10 @@ test("every non-Hero bear stays centered while scrolling with its owning section
 });
 
 test("all post-Hero sections use the same full-body character size", () => {
-  for (const section of ["about", "capabilities", "career", "work", "toolkit", "contact", "footer"]) {
+  for (const section of ["about", "capabilities", "career", "work", "toolkit", "contact"]) {
     assert.match(character, new RegExp(`${section}: \\{[\\s\\S]*?scale: 1\\.14`));
   }
+  assert.match(character, /footer: \{[\s\S]*?scale: 0\.44/);
   assert.match(character, /capabilities: \{[\s\S]*rotation: 0\.82/);
   assert.match(character, /career: \{[\s\S]*rotation: -0\.82/);
 });
@@ -334,6 +336,52 @@ test("character anchors follow each section's actual data area", () => {
   assert.match(toolkit, /className="toolkit-grid" data-character-anchor/);
   assert.match(contact, /className="contact-grid" data-character-anchor/);
   assert.match(reveal, /data-character-anchor=\{characterAnchor \? "" : undefined\}/);
+});
+
+test("desktop Toolkit cards form one compact five-card row", () => {
+  assert.match(css, /\.toolkit-grid\s*\{[\s\S]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)[\s\S]*gap: 12px/);
+  assert.match(css, /\.toolkit-card\s*\{[\s\S]*min-height: 300px[\s\S]*padding: clamp\(16px, 1\.5vw, 22px\)/);
+  assert.match(css, /\.toolkit-card ul\s*\{[\s\S]*grid-template-columns: 1fr[\s\S]*margin: 18px 0 0/);
+  assert.match(css, /@media \(max-width: 1080px\)[\s\S]*\.toolkit-grid\s*\{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(character, /toolkit: \{[\s\S]*?x: 0\.34,[\s\S]*?y: 0\.12,[\s\S]*?scale: 1\.14/);
+});
+
+test("desktop Contact bear aligns upward with the section content", () => {
+  assert.match(character, /contact: \{[\s\S]*?x: -0\.34,[\s\S]*?y: 0\.12,[\s\S]*?scale: 1\.14/);
+});
+
+test("desktop Footer presents the wave bear inside an orange spirograph orbit", () => {
+  assert.match(footer, /className="footer-details"[\s\S]*?<h4 className="tilted-card-text identity-card-text">/);
+  assert.match(footer, /className="footer-character-orbit" data-character-anchor/);
+  assert.match(footer, /<FooterPolarBearCanvas \/>/);
+  assert.match(footer, /Array\.from\(\{ length: 24 \}/);
+  assert.match(footer, /transform=\{`rotate\(\$\{index \* 7\.5\} 100 100\)`\}/);
+  assert.match(footer, /<FooterOrbitLines layer="back" \/>[\s\S]*?<FooterPolarBearCanvas \/>[\s\S]*?<FooterOrbitLines layer="contrast" \/>[\s\S]*?<FooterOrbitLines layer="front" \/>/);
+  assert.match(characterConfig, /thankYouWave: \{[\s\S]*?path: "footer\/polar-bear-thank-you-wave\.fbx"/);
+  assert.match(characterConfig, /thankYouWave: \{[\s\S]*?loop: true,[\s\S]*?playbackRate: 0\.85/);
+  assert.match(characterConfig, /footer: \{ clip: "thankYouWave", fallback: "thankYouWave" \}/);
+  assert.match(character, /footer: \{[\s\S]*?x: 0,[\s\S]*?y: 0,[\s\S]*?scale: 0\.44,[\s\S]*?rotation: 0/);
+  assert.match(character, /await ensureClips\(section === "footer"[\s\S]*?\? clipsForSection\(section\)[\s\S]*?: \[\.\.\.CORE_CLIPS/);
+  assert.match(character, /if \(section === "footer"\) \{[\s\S]*?applyTransform\(target, 1\)[\s\S]*?playSectionAnimation\(section, token, 0\)[\s\S]*?return/);
+  assert.doesNotMatch(character, /requestedSection === "footer"[\s\S]*?trackMidpoint/);
+  assert.match(footerCharacter, /loadFBX\(BASE_MODEL_PATH\)/);
+  assert.match(footerCharacter, /loadFBX\(CHARACTER_CLIPS\.thankYouWave\.path\)/);
+  assert.match(footerCharacter, /action\.setLoop\(THREE\.LoopRepeat, Infinity\)/);
+  assert.match(css, /@media \(min-width: 821px\)[\s\S]*?\.character-stage\[data-character-section="footer"\][\s\S]*?visibility: hidden/);
+  assert.match(css, /\.site-footer\s*\{[\s\S]*?grid-template-rows: auto[\s\S]*?min-height: 0[\s\S]*?padding: 24px 0/);
+  assert.match(css, /\.footer-character-orbit\s*\{[\s\S]*?z-index: 0[\s\S]*?width: clamp\(220px, 21vw, 250px\)[\s\S]*?color: var\(--accent\)/);
+  assert.match(css, /\.footer-character-model\s*\{[\s\S]*?z-index: 2[\s\S]*?inset: 5% 7% 4%[\s\S]*?overflow: hidden[\s\S]*?clip-path: inset\(0 0 18%\)/);
+  assert.match(footerCharacter, /const scale = 3\.55 \/ Math\.max\(size\.y, 1\)/);
+  assert.match(footerCharacter, /1\.08 - bounds\.max\.y \* scale/);
+  assert.match(css, /\.site-footer\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) minmax\(220px, 250px\) minmax\(0, 1fr\)/);
+  assert.match(footer, /aria-label="Social profiles"[\s\S]*?<svg viewBox="0 0 24 24"/);
+  assert.doesNotMatch(footer, /footer-orbit-mask/);
+  assert.match(css, /\.footer-orbit-lines rect\s*\{[\s\S]*?fill: none[\s\S]*?stroke: currentColor/);
+  assert.match(css, /\.footer-orbit-lines-contrast\s*\{[\s\S]*?z-index: 3[\s\S]*?color: var\(--background\)/);
+  assert.match(css, /\.footer-orbit-lines-contrast rect\s*\{[\s\S]*?stroke-width: 4\.2/);
+  assert.match(css, /\.footer-orbit-lines-front\s*\{[\s\S]*?z-index: 4[\s\S]*?clip-path: inset\(52% 0 0\)/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*?\.footer-character-orbit\s*\{[\s\S]*?display: none/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*?\.site-footer\s*\{[\s\S]*?grid-template-rows: auto[\s\S]*?min-height: 0/);
 });
 
 test("mobile sections use movable circular character viewports without changing desktop anchors", () => {
@@ -415,8 +463,8 @@ test("Hero and About meet without oversized transition spacing", () => {
 
 test("run root motion and section playback speeds are restrained", () => {
   assert.match(characterConfig, /runLoop:[\s\S]*neutralizeHorizontalRootMotion: true/);
-  assert.match(characterConfig, /presentRight:[\s\S]*desiredDuration: 1\.8/);
-  assert.match(characterConfig, /thankYouWave:[\s\S]*desiredDuration: 1\.8/);
+  assert.match(characterConfig, /capabilitiesPowerShowcase:[\s\S]*loop: true/);
+  assert.match(characterConfig, /thankYouWave:[\s\S]*loop: true[\s\S]*playbackRate: 0\.85/);
   assert.match(character, /const normalizeClip/);
   assert.match(character, /driftX \* progress/);
   assert.match(character, /driftZ \* progress/);
@@ -471,9 +519,9 @@ test("solid tilted orange cards identify primary text without effects", () => {
 });
 
 test("footer identity keeps its subtitle below the tilted name card", () => {
-  assert.match(css, /\.footer-identity\s*\{[\s\S]*justify-items: start;[\s\S]*gap: 10px/);
-  assert.match(css, /\.footer-identity b\s*\{[\s\S]*width: fit-content/);
-  assert.match(css, /\.footer-identity span\s*\{[\s\S]*z-index: 1;[\s\S]*display: block/);
+  assert.match(footer, /<h4 className="tilted-card-text identity-card-text">Ramprakash Sah<\/h4>/);
+  assert.match(css, /\.footer-details\s*\{[\s\S]*justify-items: start;[\s\S]*gap: 10px/);
+  assert.match(css, /\.footer-details h4\s*\{[\s\S]*width: fit-content[\s\S]*font-size: clamp\(22px, 1\.7vw, 26px\)/);
 });
 
 test("cards use a consistent soft-corner system without duplicated section lines", () => {

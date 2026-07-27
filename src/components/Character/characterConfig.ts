@@ -30,38 +30,40 @@ export const CHARACTER_CLIPS = {
     playbackRate: 0.9,
     neutralizeHorizontalRootMotion: true,
   },
-  listenIdle: {
-    path: "about/polar-bear-listen-idle-loop.fbx",
+  aboutDetective: {
+    path: "about/polar-bear-about-detective-loop.fbx",
     loop: true,
-    playbackRate: 0.78,
+    playbackRate: 0.9,
   },
-  presentRight: {
-    path: "capabilities/polar-bear-present-right.fbx",
-    desiredDuration: 1.8,
-  },
-  proudIdle: {
-    path: "career/polar-bear-proud-idle-loop.fbx",
+  capabilitiesPowerShowcase: {
+    path: "capabilities/polar-bear-capabilities-power-showcase-loop.fbx",
     loop: true,
-    playbackRate: 0.8,
+    playbackRate: 0.92,
+  },
+  careerVictory: {
+    path: "career/polar-bear-career-victory-loop.fbx",
+    loop: true,
+    playbackRate: 0.9,
   },
   typeLoop: {
     path: "work/polar-bear-type-loop.fbx",
     loop: true,
     playbackRate: 0.82,
   },
-  useToolLoop: {
-    path: "toolkit/polar-bear-use-tool-loop.fbx",
+  toolkitTechMagician: {
+    path: "toolkit/polar-bear-toolkit-tech-magician-loop.fbx",
     loop: true,
-    playbackRate: 0.84,
+    playbackRate: 0.85,
   },
-  contactIdle: {
-    path: "contact/polar-bear-contact-idle-loop.fbx",
+  contactBigInvitation: {
+    path: "contact/polar-bear-contact-big-invitation-loop.fbx",
     loop: true,
-    playbackRate: 0.82,
+    playbackRate: 0.9,
   },
   thankYouWave: {
     path: "footer/polar-bear-thank-you-wave.fbx",
-    desiredDuration: 1.8,
+    loop: true,
+    playbackRate: 0.85,
   },
 } as const satisfies Record<string, ClipAsset>;
 
@@ -74,13 +76,13 @@ export interface SectionScene {
 
 export const SECTION_SCENES: Record<CharacterSection, SectionScene> = {
   home: { clip: "idleStanding", fallback: "idleStanding" },
-  about: { clip: "listenIdle", fallback: "idleStanding" },
-  capabilities: { clip: "presentRight", fallback: "idleStanding" },
-  career: { clip: "proudIdle", fallback: "idleStanding" },
+  about: { clip: "aboutDetective", fallback: "idleStanding" },
+  capabilities: { clip: "capabilitiesPowerShowcase", fallback: "idleStanding" },
+  career: { clip: "careerVictory", fallback: "idleStanding" },
   work: { clip: "typeLoop", fallback: "idleStanding" },
-  toolkit: { clip: "useToolLoop", fallback: "idleStanding" },
-  contact: { clip: "contactIdle", fallback: "idleStanding" },
-  footer: { clip: "thankYouWave", fallback: "idleStanding" },
+  toolkit: { clip: "toolkitTechMagician", fallback: "idleStanding" },
+  contact: { clip: "contactBigInvitation", fallback: "idleStanding" },
+  footer: { clip: "thankYouWave", fallback: "thankYouWave" },
 };
 
 export const CORE_CLIPS: ClipKey[] = ["idleStanding", "runLoop"];

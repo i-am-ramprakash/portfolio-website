@@ -399,7 +399,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
         },
         toolkit: {
           x: 0.34,
-          y: -0.02,
+          y: 0.12,
           scale: 1.14,
           rotation: -0.82,
           mobileX: -0.12,
@@ -409,7 +409,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
         },
         contact: {
           x: -0.34,
-          y: -0.02,
+          y: 0.12,
           scale: 1.14,
           rotation: 0.82,
           mobileX: -0.12,
@@ -418,10 +418,10 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
           mobileRotation: 0.18,
         },
         footer: {
-          x: 0.3,
-          y: -0.02,
-          scale: 1.14,
-          rotation: -0.5,
+          x: 0,
+          y: 0,
+          scale: 0.44,
+          rotation: 0,
           mobileX: -0.12,
           mobileY: -0.22,
           mobileScale: 0.78,
@@ -726,7 +726,9 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
     };
 
     const runSectionTransition = async (section: CharacterSection, token: number) => {
-      await ensureClips([...CORE_CLIPS, ...clipsForSection(section)]);
+      await ensureClips(section === "footer"
+        ? clipsForSection(section)
+        : [...CORE_CLIPS, ...clipsForSection(section)]);
       if (!wrapper || !isCurrent(token)) return;
       if (reducedMotionRef.current) {
         await runReducedSection(section, token);
@@ -734,6 +736,13 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       }
 
       const target = resolveSectionAnchor(section);
+      if (section === "footer") {
+        currentSection = section;
+        applyTransform(target, 1);
+        container.dataset.characterSettled = section;
+        await playSectionAnimation(section, token, 0);
+        return;
+      }
       const currentIndex = SECTION_ORDER.indexOf(currentSection);
       const targetIndex = SECTION_ORDER.indexOf(section);
       const switchingBetweenAdjacentSections = Math.abs(currentIndex - targetIndex) === 1;
@@ -846,6 +855,7 @@ const PolarBear3DCanvas = ({ activeSection, reducedMotion = false }: PolarBear3D
       const sectionRect = section.getBoundingClientRect();
       const localTop = THREE.MathUtils.clamp(sectionRect.top - canvasRect.top, 0, viewportHeight);
       const localBottom = THREE.MathUtils.clamp(sectionRect.bottom - canvasRect.top, 0, viewportHeight);
+
       const clipHeight = localBottom - localTop;
       if (clipHeight <= 0) return;
 

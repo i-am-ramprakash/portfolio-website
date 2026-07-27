@@ -17,7 +17,7 @@ const HeroSection = ({ reducedMotion, onNavigate }: HeroSectionProps) => (
     <div className="hero-grid">
       <Reveal className="hero-copy" reducedMotion={reducedMotion}>
         <p className="status-line">
-          <i aria-hidden="true" /> Full-Stack Developer · Kathmandu, Nepal
+          <i aria-hidden="true" /> Full-Stack Developer · Nepal
         </p>
         <h1
           id="hero-title"
